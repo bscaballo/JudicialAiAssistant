@@ -13,8 +13,8 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 export default function LegalResearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    jurisdiction: "",
-    courtLevel: "",
+    jurisdiction: "all",
+    courtLevel: "all",
     dateFrom: "",
     dateTo: "",
   });
@@ -114,7 +114,7 @@ export default function LegalResearch() {
                   <SelectValue placeholder="All Jurisdictions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Jurisdictions</SelectItem>
+                  <SelectItem value="all">All Jurisdictions</SelectItem>
                   <SelectItem value="federal">Federal</SelectItem>
                   <SelectItem value="state">State</SelectItem>
                   <SelectItem value="local">Local</SelectItem>
@@ -128,7 +128,7 @@ export default function LegalResearch() {
                   <SelectValue placeholder="All Courts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Courts</SelectItem>
+                  <SelectItem value="all">All Courts</SelectItem>
                   <SelectItem value="supreme">Supreme Court</SelectItem>
                   <SelectItem value="appeals">Appeals Court</SelectItem>
                   <SelectItem value="district">District Court</SelectItem>

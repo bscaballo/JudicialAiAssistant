@@ -66,8 +66,8 @@ export async function performLegalResearch(query: string, filters: any) {
     Query: ${query}
     
     Filters:
-    - Jurisdiction: ${filters.jurisdiction || 'All'}
-    - Court Level: ${filters.courtLevel || 'All'}
+    - Jurisdiction: ${filters.jurisdiction === 'all' ? 'All' : filters.jurisdiction || 'All'}
+    - Court Level: ${filters.courtLevel === 'all' ? 'All' : filters.courtLevel || 'All'}
     - Date Range: ${filters.dateRange || 'All time'}
     
     Please provide:

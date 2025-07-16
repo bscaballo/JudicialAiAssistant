@@ -34,7 +34,7 @@ const ACTIVITY_ICONS = {
 };
 
 export default function ActivityHistory() {
-  const [filterType, setFilterType] = useState("");
+  const [filterType, setFilterType] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const { toast } = useToast();
@@ -42,7 +42,7 @@ export default function ActivityHistory() {
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["/api/activity-history", filterType],
     queryFn: async () => {
-      const url = filterType 
+      const url = filterType && filterType !== "all"
         ? `/api/activity-history?type=${filterType}`
         : "/api/activity-history";
       const response = await apiRequest("GET", url);
@@ -112,7 +112,7 @@ export default function ActivityHistory() {
                   <SelectValue placeholder="All Activities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Activities</SelectItem>
+                  <SelectItem value="all">All Activities</SelectItem>
                   <SelectItem value="case-briefer">Case Briefer</SelectItem>
                   <SelectItem value="legal-research">Legal Research</SelectItem>
                   <SelectItem value="case-law-explorer">Case Law Explorer</SelectItem>
@@ -145,7 +145,7 @@ export default function ActivityHistory() {
             <div>
               <Button 
                 onClick={() => {
-                  setFilterType("");
+                  setFilterType("all");
                   setDateFrom("");
                   setDateTo("");
                 }}
@@ -173,7 +173,7 @@ export default function ActivityHistory() {
               <History className="h-16 w-16 text-slate-400 mx-auto mb-4" />
               <p className="text-slate-400 text-lg">No activities found</p>
               <p className="text-slate-500 text-sm">
-                {filterType || dateFrom || dateTo 
+                {(filterType && filterType !== "all") || dateFrom || dateTo 
                   ? "Try adjusting your filters"
                   : "Start using the judicial tools to see your activity history"
                 }
