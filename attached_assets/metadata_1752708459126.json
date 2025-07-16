@@ -1,0 +1,6 @@
+{
+  "name": "Judicial AI Assistant",
+  "description": "An AI-powered application designed to assist Judge Lori Gibson Willard with case summarization, legal research, order drafting, and docket management for the Division II District Court.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
