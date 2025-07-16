@@ -1,8 +1,8 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "../storage";
 import fs from "fs";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function generateCaseBrief(documentIds: number[], caseDetails: any) {
   try {
@@ -44,7 +44,7 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     Format the response as a professional legal brief.
     `;
 
-    const model = ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const response = await model.generateContent(prompt);
 
     return {
@@ -80,13 +80,11 @@ export async function performLegalResearch(query: string, filters: any) {
     Format the response as a structured legal research report.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(prompt);
 
     return {
-      results: response.text || "Failed to perform legal research",
+      results: response.response.text() || "Failed to perform legal research",
       query,
       filters,
       searchedAt: new Date().toISOString(),
@@ -116,13 +114,11 @@ export async function exploreCaseLaw(topic: string, jurisdiction: string, dateRa
     Format the response as a comprehensive case law analysis.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(prompt);
 
     return {
-      analysis: response.text || "Failed to explore case law",
+      analysis: response.response.text() || "Failed to explore case law",
       topic,
       jurisdiction,
       dateRange,
@@ -170,13 +166,11 @@ export async function analyzeEvidence(documentIds: number[], analysisType: strin
     Format the response as a professional evidence analysis report.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(prompt);
 
     return {
-      analysis: response.text || "Failed to analyze evidence",
+      analysis: response.response.text() || "Failed to analyze evidence",
       analysisType,
       documentCount: documentIds.length,
       analyzedAt: new Date().toISOString(),
@@ -212,13 +206,11 @@ export async function generateOrder(orderType: string, caseDetails: any, rulingD
     Format the response as a professional court order ready for judicial signature.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(prompt);
 
     return {
-      content: response.text || "Failed to generate order",
+      content: response.response.text() || "Failed to generate order",
       orderType,
       caseDetails,
       generatedAt: new Date().toISOString(),
@@ -252,13 +244,11 @@ export async function generateJuryInstructions(caseDetails: any, charges: string
     Format the response as professional jury instructions suitable for court use.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(prompt);
 
     return {
-      instructions: response.text || "Failed to generate jury instructions",
+      instructions: response.response.text() || "Failed to generate jury instructions",
       caseDetails,
       charges,
       specificPoints,
@@ -293,15 +283,13 @@ export async function coachOralArgument(caseDetails: any, argumentsText: string,
     Format the response as a comprehensive oral argument preparation guide.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(prompt);
 
     return {
-      coaching: response.text || "Failed to provide oral argument coaching",
+      coaching: response.response.text() || "Failed to provide oral argument coaching",
       caseDetails,
-      arguments,
+      argumentsText,
       practiceMode,
       generatedAt: new Date().toISOString(),
     };
