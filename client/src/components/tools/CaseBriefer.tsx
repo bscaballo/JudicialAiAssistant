@@ -77,6 +77,10 @@ export default function CaseBriefer() {
     setSelectedFiles(files);
   };
 
+  const handleChooseFiles = () => {
+    document.getElementById('file-upload')?.click();
+  };
+
   const handleGenerateBrief = () => {
     if (selectedFiles.length === 0) {
       toast({
@@ -135,11 +139,13 @@ export default function CaseBriefer() {
               className="hidden"
               id="file-upload"
             />
-            <Label htmlFor="file-upload">
-              <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 border-blue-600">
-                Choose Files
-              </Button>
-            </Label>
+            <Button 
+              onClick={handleChooseFiles}
+              variant="outline" 
+              className="bg-blue-600 hover:bg-blue-700 border-blue-600"
+            >
+              Choose Files
+            </Button>
             {selectedFiles.length > 0 && (
               <div className="mt-4 text-left">
                 <p className="text-sm text-slate-400 mb-2">Selected files:</p>
