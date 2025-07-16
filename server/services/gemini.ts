@@ -44,13 +44,11 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     Format the response as a professional legal brief.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    const model = ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const response = await model.generateContent(prompt);
 
     return {
-      summary: response.text || "Failed to generate case brief",
+      summary: response.response.text() || "Failed to generate case brief",
       caseDetails,
       generatedAt: new Date().toISOString(),
     };
