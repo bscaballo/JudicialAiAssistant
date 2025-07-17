@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { formatMarkdownText } from "@/lib/textUtils";
+import { DraftManager } from "@/components/DraftManager";
 
 export default function CaseLawExplorer() {
   const [topic, setTopic] = useState("");
@@ -65,6 +66,23 @@ export default function CaseLawExplorer() {
       description: "Analysis export functionality will be implemented",
     });
   };
+
+  const handleLoadDraft = (draft: { formData: Record<string, any>; partialOutput?: Record<string, any> }) => {
+    const { formData, partialOutput } = draft;
+    
+    if (formData.topic) setTopic(formData.topic);
+    if (formData.jurisdiction) setJurisdiction(formData.jurisdiction);
+    if (formData.dateRange) setDateRange(formData.dateRange);
+    if (partialOutput) setExplorationResults(partialOutput);
+  };
+
+  const getCurrentFormData = () => ({
+    topic,
+    jurisdiction,
+    dateRange,
+  });
+
+  const getCurrentOutput = () => explorationResults ? { exploration: explorationResults } : undefined;
 
   return (
     <div className="space-y-6">
@@ -130,18 +148,26 @@ export default function CaseLawExplorer() {
             </div>
           </div>
 
-          <Button 
-            onClick={handleExplore}
-            disabled={exploreMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {exploreMutation.isPending ? (
-              <LoadingSpinner className="h-4 w-4 mr-2" />
-            ) : (
-              <Search className="h-4 w-4 mr-2" />
-            )}
-            Explore Case Law
-          </Button>
+          <div className="flex gap-4">
+            <Button 
+              onClick={handleExplore}
+              disabled={exploreMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {exploreMutation.isPending ? (
+                <LoadingSpinner className="h-4 w-4 mr-2" />
+              ) : (
+                <Search className="h-4 w-4 mr-2" />
+              )}
+              Explore Case Law
+            </Button>
+            <DraftManager
+              toolType="case-law-explorer"
+              currentFormData={getCurrentFormData()}
+              currentOutput={getCurrentOutput()}
+              onLoadDraft={handleLoadDraft}
+            />
+          </div>
         </CardContent>
       </Card>
 

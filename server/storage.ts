@@ -6,6 +6,7 @@ import {
   generatedOrders,
   docketEntries,
   googleCalendarEvents,
+  drafts,
   type User,
   type UpsertUser,
   type Case,
@@ -20,6 +21,8 @@ import {
   type InsertDocketEntry,
   type GoogleCalendarEvent,
   type InsertGoogleCalendarEvent,
+  type Draft,
+  type InsertDraft,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
@@ -59,6 +62,13 @@ export interface IStorage {
   getGoogleCalendarEvents(userId: string, startDate?: Date, endDate?: Date): Promise<GoogleCalendarEvent[]>;
   upsertGoogleCalendarEvent(eventData: InsertGoogleCalendarEvent): Promise<GoogleCalendarEvent>;
   deleteGoogleCalendarEvent(userId: string, googleEventId: string): Promise<void>;
+  
+  // Draft operations
+  createDraft(draftData: InsertDraft): Promise<Draft>;
+  getDrafts(userId: string, toolType?: string): Promise<Draft[]>;
+  getDraftById(id: number): Promise<Draft | undefined>;
+  updateDraft(id: number, updates: Partial<InsertDraft>): Promise<Draft>;
+  deleteDraft(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -263,6 +273,44 @@ export class DatabaseStorage implements IStorage {
         eq(googleCalendarEvents.userId, userId),
         eq(googleCalendarEvents.googleEventId, googleEventId)
       ));
+  }
+
+  // Draft operations
+  async createDraft(draftData: InsertDraft): Promise<Draft> {
+    const [draft] = await db.insert(drafts).values(draftData).returning();
+    return draft;
+  }
+
+  async getDrafts(userId: string, toolType?: string): Promise<Draft[]> {
+    let whereClause = eq(drafts.userId, userId);
+    
+    if (toolType) {
+      whereClause = and(eq(drafts.userId, userId), eq(drafts.toolType, toolType))!;
+    }
+    
+    return await db
+      .select()
+      .from(drafts)
+      .where(whereClause)
+      .orderBy(desc(drafts.updatedAt));
+  }
+
+  async getDraftById(id: number): Promise<Draft | undefined> {
+    const [draft] = await db.select().from(drafts).where(eq(drafts.id, id));
+    return draft;
+  }
+
+  async updateDraft(id: number, updates: Partial<InsertDraft>): Promise<Draft> {
+    const [updatedDraft] = await db
+      .update(drafts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(drafts.id, id))
+      .returning();
+    return updatedDraft;
+  }
+
+  async deleteDraft(id: number): Promise<void> {
+    await db.delete(drafts).where(eq(drafts.id, id));
   }
 }
 

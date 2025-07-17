@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMarkdownText } from "@/lib/textUtils";
+import { DraftManager } from "@/components/DraftManager";
 
 export default function LegalResearch() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,6 +83,21 @@ export default function LegalResearch() {
     });
   };
 
+  const handleLoadDraft = (draft: { formData: Record<string, any>; partialOutput?: Record<string, any> }) => {
+    const { formData, partialOutput } = draft;
+    
+    if (formData.searchQuery) setSearchQuery(formData.searchQuery);
+    if (formData.filters) setFilters(formData.filters);
+    if (partialOutput) setSearchResults(partialOutput);
+  };
+
+  const getCurrentFormData = () => ({
+    searchQuery,
+    filters,
+  });
+
+  const getCurrentOutput = () => searchResults ? { research: searchResults } : undefined;
+
 
 
   return (
@@ -122,6 +138,12 @@ export default function LegalResearch() {
               )}
               Search
             </Button>
+            <DraftManager
+              toolType="legal-research"
+              currentFormData={getCurrentFormData()}
+              currentOutput={getCurrentOutput()}
+              onLoadDraft={handleLoadDraft}
+            />
           </div>
 
           {/* Search Filters */}

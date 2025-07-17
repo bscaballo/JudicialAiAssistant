@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { formatMarkdownText } from "@/lib/textUtils";
+import { DraftManager } from "@/components/DraftManager";
 
 export default function OralArgumentCoach() {
   const [caseDetails, setCaseDetails] = useState({
@@ -85,12 +86,22 @@ export default function OralArgumentCoach() {
     });
   };
 
-  const handleSaveSession = () => {
-    toast({
-      title: "Info",
-      description: "Session save functionality will be implemented",
-    });
+  const handleLoadDraft = (draft: { formData: Record<string, any>; partialOutput?: Record<string, any> }) => {
+    const { formData, partialOutput } = draft;
+    
+    if (formData.caseDetails) setCaseDetails(formData.caseDetails);
+    if (formData.argumentsText) setArgumentsText(formData.argumentsText);
+    if (formData.practiceMode) setPracticeMode(formData.practiceMode);
+    if (partialOutput) setCoachingResults(partialOutput);
   };
+
+  const getCurrentFormData = () => ({
+    caseDetails,
+    argumentsText,
+    practiceMode,
+  });
+
+  const getCurrentOutput = () => coachingResults ? { coaching: coachingResults } : undefined;
 
   return (
     <div className="space-y-6">
@@ -179,14 +190,12 @@ export default function OralArgumentCoach() {
           )}
           Start Coaching
         </Button>
-        <Button 
-          onClick={handleSaveSession}
-          variant="outline" 
-          className="bg-slate-700 hover:bg-slate-600"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Session
-        </Button>
+        <DraftManager
+          toolType="oral-argument-coach"
+          currentFormData={getCurrentFormData()}
+          currentOutput={getCurrentOutput()}
+          onLoadDraft={handleLoadDraft}
+        />
       </div>
 
       {/* Coaching Results */}

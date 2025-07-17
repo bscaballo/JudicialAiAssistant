@@ -116,6 +116,20 @@ export const googleCalendarEvents = pgTable("google_calendar_events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Drafts table for saving work-in-progress across all tools
+export const drafts = pgTable("drafts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  caseId: integer("case_id").references(() => cases.id),
+  toolType: varchar("tool_type").notNull(), // case-briefer, legal-research, order-drafter, etc.
+  title: varchar("title").notNull(),
+  formData: jsonb("form_data").notNull(), // Form inputs/state
+  partialOutput: jsonb("partial_output"), // Any partial results/outputs
+  status: varchar("status").default("draft"), // draft, in-progress, completed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -137,6 +151,9 @@ export type DocketEntry = typeof docketEntries.$inferSelect;
 
 export type InsertGoogleCalendarEvent = typeof googleCalendarEvents.$inferInsert;
 export type GoogleCalendarEvent = typeof googleCalendarEvents.$inferSelect;
+
+export type InsertDraft = typeof drafts.$inferInsert;
+export type Draft = typeof drafts.$inferSelect;
 
 // Zod schemas
 export const insertCaseSchema = createInsertSchema(cases).omit({
@@ -169,4 +186,10 @@ export const insertGoogleCalendarEventSchema = createInsertSchema(googleCalendar
   id: true,
   createdAt: true,
   lastSyncAt: true,
+});
+
+export const insertDraftSchema = createInsertSchema(drafts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });

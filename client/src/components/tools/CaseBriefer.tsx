@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { formatMarkdownText } from "@/lib/textUtils";
+import { DraftManager } from "@/components/DraftManager";
 
 export default function CaseBriefer() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -111,6 +112,31 @@ export default function CaseBriefer() {
       description: "PDF export functionality will be implemented",
     });
   };
+
+  const handleLoadDraft = (draft: { formData: Record<string, any>; partialOutput?: Record<string, any> }) => {
+    const { formData, partialOutput } = draft;
+    
+    // Load form data
+    if (formData.caseDetails) {
+      setCaseDetails(formData.caseDetails);
+    }
+    if (formData.selectedFiles) {
+      // Note: File objects can't be fully restored from drafts, so we'll show file names
+      setSelectedFiles(formData.selectedFiles);
+    }
+    
+    // Load partial output
+    if (partialOutput) {
+      setGeneratedBrief(partialOutput);
+    }
+  };
+
+  const getCurrentFormData = () => ({
+    caseDetails,
+    selectedFiles: selectedFiles.map(file => ({ name: file.name, size: file.size, type: file.type })),
+  });
+
+  const getCurrentOutput = () => generatedBrief ? { brief: generatedBrief } : undefined;
 
   return (
     <div className="space-y-6">
@@ -229,10 +255,12 @@ export default function CaseBriefer() {
           )}
           Generate Brief
         </Button>
-        <Button variant="outline" className="bg-slate-700 hover:bg-slate-600">
-          <Save className="h-4 w-4 mr-2" />
-          Save Draft
-        </Button>
+        <DraftManager
+          toolType="case-briefer"
+          currentFormData={getCurrentFormData()}
+          currentOutput={getCurrentOutput()}
+          onLoadDraft={handleLoadDraft}
+        />
       </div>
 
       {/* Generated Brief Preview */}

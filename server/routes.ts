@@ -9,7 +9,8 @@ import {
   insertDocumentSchema,
   insertActivityHistorySchema,
   insertGeneratedOrderSchema,
-  insertDocketEntrySchema 
+  insertDocketEntrySchema,
+  insertDraftSchema 
 } from "@shared/schema";
 import { 
   generateCaseBrief,
@@ -521,6 +522,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching activity history:", error);
       res.status(500).json({ message: "Failed to fetch activity history" });
+    }
+  });
+
+  // Draft routes
+  app.post('/api/drafts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const draftData = insertDraftSchema.parse({ ...req.body, userId });
+      const draft = await storage.createDraft(draftData);
+      res.json(draft);
+    } catch (error) {
+      console.error("Error creating draft:", error);
+      res.status(500).json({ message: "Failed to create draft" });
+    }
+  });
+
+  app.get('/api/drafts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const toolType = req.query.toolType as string;
+      const drafts = await storage.getDrafts(userId, toolType);
+      res.json(drafts);
+    } catch (error) {
+      console.error("Error fetching drafts:", error);
+      res.status(500).json({ message: "Failed to fetch drafts" });
+    }
+  });
+
+  app.get('/api/drafts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const draft = await storage.getDraftById(parseInt(id));
+      if (!draft) {
+        return res.status(404).json({ message: "Draft not found" });
+      }
+      res.json(draft);
+    } catch (error) {
+      console.error("Error fetching draft:", error);
+      res.status(500).json({ message: "Failed to fetch draft" });
+    }
+  });
+
+  app.put('/api/drafts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedDraft = await storage.updateDraft(parseInt(id), updates);
+      res.json(updatedDraft);
+    } catch (error) {
+      console.error("Error updating draft:", error);
+      res.status(500).json({ message: "Failed to update draft" });
+    }
+  });
+
+  app.delete('/api/drafts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteDraft(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting draft:", error);
+      res.status(500).json({ message: "Failed to delete draft" });
     }
   });
 

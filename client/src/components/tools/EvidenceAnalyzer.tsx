@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { formatMarkdownText } from "@/lib/textUtils";
+import { DraftManager } from "@/components/DraftManager";
 
 export default function EvidenceAnalyzer() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -150,6 +151,21 @@ export default function EvidenceAnalyzer() {
     });
   };
 
+  const handleLoadDraft = (draft: { formData: Record<string, any>; partialOutput?: Record<string, any> }) => {
+    const { formData, partialOutput } = draft;
+    
+    if (formData.selectedDocuments) setSelectedDocuments(formData.selectedDocuments);
+    if (formData.analysisType) setAnalysisType(formData.analysisType);
+    if (partialOutput) setAnalysisResults(partialOutput);
+  };
+
+  const getCurrentFormData = () => ({
+    selectedDocuments,
+    analysisType,
+  });
+
+  const getCurrentOutput = () => analysisResults ? { analysis: analysisResults } : undefined;
+
   return (
     <div className="space-y-6">
       <div className="mb-8">
@@ -251,18 +267,26 @@ export default function EvidenceAnalyzer() {
             </Select>
           </div>
 
-          <Button 
-            onClick={handleAnalyze}
-            disabled={analyzeMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700 mt-4"
-          >
-            {analyzeMutation.isPending ? (
-              <LoadingSpinner className="h-4 w-4 mr-2" />
-            ) : (
-              <Wand2 className="h-4 w-4 mr-2" />
-            )}
-            Analyze Evidence
-          </Button>
+          <div className="flex gap-4 mt-4">
+            <Button 
+              onClick={handleAnalyze}
+              disabled={analyzeMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {analyzeMutation.isPending ? (
+                <LoadingSpinner className="h-4 w-4 mr-2" />
+              ) : (
+                <Wand2 className="h-4 w-4 mr-2" />
+              )}
+              Analyze Evidence
+            </Button>
+            <DraftManager
+              toolType="evidence-analyzer"
+              currentFormData={getCurrentFormData()}
+              currentOutput={getCurrentOutput()}
+              onLoadDraft={handleLoadDraft}
+            />
+          </div>
         </CardContent>
       </Card>
 

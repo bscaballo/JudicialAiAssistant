@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { formatMarkdownText } from "@/lib/textUtils";
+import { DraftManager } from "@/components/DraftManager";
 
 export default function OrderDrafter() {
   const [orderType, setOrderType] = useState("");
@@ -86,12 +87,22 @@ export default function OrderDrafter() {
     });
   };
 
-  const handleSaveDraft = () => {
-    toast({
-      title: "Info",
-      description: "Draft save functionality will be implemented",
-    });
+  const handleLoadDraft = (draft: { formData: Record<string, any>; partialOutput?: Record<string, any> }) => {
+    const { formData, partialOutput } = draft;
+    
+    if (formData.orderType) setOrderType(formData.orderType);
+    if (formData.caseDetails) setCaseDetails(formData.caseDetails);
+    if (formData.rulingDetails) setRulingDetails(formData.rulingDetails);
+    if (partialOutput) setGeneratedOrder(partialOutput);
   };
+
+  const getCurrentFormData = () => ({
+    orderType,
+    caseDetails,
+    rulingDetails,
+  });
+
+  const getCurrentOutput = () => generatedOrder ? { order: generatedOrder } : undefined;
 
   return (
     <div className="space-y-6">
@@ -202,14 +213,12 @@ export default function OrderDrafter() {
           )}
           Generate Order
         </Button>
-        <Button 
-          onClick={handleSaveDraft}
-          variant="outline" 
-          className="bg-slate-700 hover:bg-slate-600"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Draft
-        </Button>
+        <DraftManager
+          toolType="order-drafter"
+          currentFormData={getCurrentFormData()}
+          currentOutput={getCurrentOutput()}
+          onLoadDraft={handleLoadDraft}
+        />
       </div>
 
       {/* Generated Order Preview */}
