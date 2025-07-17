@@ -316,28 +316,41 @@ export default function Sidebar({ activeTab, setActiveTab, user, selectedCase, s
               </div>
               
               {extractCaseInfoMutation.isPending && (
-                <p className="text-sm text-blue-400">Extracting case information...</p>
+                <div className="text-center py-4">
+                  <p className="text-sm text-blue-400">Extracting case information...</p>
+                </div>
               )}
               
               {(manualCaseForm.caseName || manualCaseForm.caseNumber) && (
                 <div className="space-y-4">
+                  <div className="bg-green-900/20 border border-green-700 rounded-lg p-3">
+                    <p className="text-sm text-green-300 font-medium">
+                      ✓ Case information extracted successfully!
+                    </p>
+                    <p className="text-xs text-green-400 mt-1">
+                      Review and edit the details below, then click "Create Case" to save.
+                    </p>
+                  </div>
+                  
                   <div>
-                    <Label htmlFor="extracted-caseName" className="text-slate-200">Case Name</Label>
+                    <Label htmlFor="extracted-caseName" className="text-slate-200">Case Name *</Label>
                     <Input
                       id="extracted-caseName"
                       value={manualCaseForm.caseName}
                       onChange={(e) => setManualCaseForm(prev => ({ ...prev, caseName: e.target.value }))}
                       className="bg-slate-700 border-slate-600 text-slate-200"
+                      placeholder="Case name is required"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="extracted-caseNumber" className="text-slate-200">Case Number</Label>
+                    <Label htmlFor="extracted-caseNumber" className="text-slate-200">Case Number *</Label>
                     <Input
                       id="extracted-caseNumber"
                       value={manualCaseForm.caseNumber}
                       onChange={(e) => setManualCaseForm(prev => ({ ...prev, caseNumber: e.target.value }))}
                       className="bg-slate-700 border-slate-600 text-slate-200"
+                      placeholder="Case number is required"
                     />
                   </div>
                   
@@ -348,6 +361,7 @@ export default function Sidebar({ activeTab, setActiveTab, user, selectedCase, s
                       value={manualCaseForm.court}
                       onChange={(e) => setManualCaseForm(prev => ({ ...prev, court: e.target.value }))}
                       className="bg-slate-700 border-slate-600 text-slate-200"
+                      placeholder="e.g., Superior Court"
                     />
                   </div>
                   
@@ -364,10 +378,10 @@ export default function Sidebar({ activeTab, setActiveTab, user, selectedCase, s
                   
                   <Button 
                     onClick={handleManualCaseSubmit}
-                    disabled={createCaseMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={createCaseMutation.isPending || !manualCaseForm.caseName || !manualCaseForm.caseNumber}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
                   >
-                    {createCaseMutation.isPending ? "Creating..." : "Create Case"}
+                    {createCaseMutation.isPending ? "Creating Case..." : "Create Case"}
                   </Button>
                 </div>
               )}

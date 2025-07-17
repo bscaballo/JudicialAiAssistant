@@ -32,8 +32,16 @@ export async function generateCaseInfo(textContent: string) {
     const responseText = response.response.text();
     
     try {
+      // Clean up the response text (remove markdown code blocks if present)
+      let cleanedResponse = responseText.trim();
+      if (cleanedResponse.startsWith('```json')) {
+        cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/\n?```$/, '');
+      } else if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse.replace(/```\n?/, '').replace(/\n?```$/, '');
+      }
+      
       // Parse the JSON response
-      const caseInfo = JSON.parse(responseText);
+      const caseInfo = JSON.parse(cleanedResponse);
       
       // Validate and format the response
       return {
