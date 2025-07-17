@@ -11,10 +11,17 @@ export async function processFileUpload(file: Express.Multer.File, userId: strin
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    // Extract text content from the file
-    const textContent = await extractTextFromFile(file.path, file.mimetype);
+    // Try to extract text content, but don't fail if it doesn't work
+    // Since Gemini can handle PDFs natively, text extraction is optional
+    let textContent = '';
+    try {
+      textContent = await extractTextFromFile(file.path, file.mimetype);
+    } catch (error) {
+      console.warn(`Text extraction failed for ${file.originalname}, but file can still be processed by Gemini:`, error);
+      textContent = ''; // Empty text content is fine since Gemini will read the PDF directly
+    }
 
-    // Save file metadata and text content to database
+    // Save file metadata to database - file path is most important for Gemini
     const document = await storage.createDocument({
       userId,
       caseId: caseId || null,

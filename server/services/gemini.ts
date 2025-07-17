@@ -1,26 +1,70 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "../storage";
 import fs from "fs";
+import path from "path";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+// Helper function to upload file to Gemini
+async function uploadFileToGemini(filePath: string, mimeType: string, displayName: string) {
+  try {
+    const fileData = fs.readFileSync(filePath);
+    const base64Data = fileData.toString('base64');
+    
+    // For now, we'll use inline data. In production, you might want to use the File API for larger files
+    return {
+      inlineData: {
+        mimeType,
+        data: base64Data
+      }
+    };
+  } catch (error) {
+    console.error(`Error uploading file ${filePath}:`, error);
+    throw error;
+  }
+}
+
 export async function generateCaseBrief(documentIds: number[], caseDetails: any) {
   try {
-    // Get document content
+    // Get documents from database
     const documents = await Promise.all(
       documentIds.map(id => storage.getDocumentById(id))
     );
     
-    const documentContent = documents
-      .filter(doc => doc)
-      .map(doc => {
-        if (doc!.textContent) {
-          return `[${doc!.fileName}]:\n${doc!.textContent}`;
+    // Filter out any null documents
+    const validDocuments = documents.filter(doc => doc);
+    
+    // Prepare parts for Gemini - include both files and text prompt
+    const parts: any[] = [];
+    
+    // Upload each document to Gemini
+    for (const doc of validDocuments) {
+      if (doc!.fileType === 'application/pdf' || doc!.fileType === 'text/plain') {
+        try {
+          const filePart = await uploadFileToGemini(
+            doc!.filePath,
+            doc!.fileType,
+            doc!.fileName
+          );
+          parts.push(filePart);
+        } catch (error) {
+          console.error(`Failed to upload file ${doc!.fileName}:`, error);
+          // If file upload fails, fall back to text content if available
+          if (doc!.textContent) {
+            parts.push({
+              text: `[${doc!.fileName}]:\n${doc!.textContent}`
+            });
+          }
         }
-        return `[${doc!.fileName}] - No text content available`;
-      })
-      .join('\n\n');
-
+      } else if (doc!.textContent) {
+        // For non-PDF/text files, use text content if available
+        parts.push({
+          text: `[${doc!.fileName}]:\n${doc!.textContent}`
+        });
+      }
+    }
+    
+    // Add the text prompt
     const prompt = `
     You are a judicial assistant helping to create a comprehensive case brief. 
     
@@ -30,10 +74,8 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     - Court: ${caseDetails.court}
     - Date Filed: ${caseDetails.dateFiled}
     
-    Document Content:
-    ${documentContent}
+    I have uploaded ${validDocuments.length} document(s) for you to analyze. Please review all the documents and generate a comprehensive case brief that includes:
     
-    Please generate a comprehensive case brief that includes:
     1. Case Summary
     2. Key Legal Issues
     3. Relevant Facts
@@ -43,9 +85,11 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     
     Format the response as a professional legal brief.
     `;
+    
+    parts.push({ text: prompt });
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-    const response = await model.generateContent(prompt);
+    const response = await model.generateContent(parts);
 
     return {
       summary: response.response.text() || "Failed to generate case brief",
@@ -157,28 +201,48 @@ export async function exploreCaseLaw(topic: string, jurisdiction: string, dateRa
 
 export async function analyzeEvidence(documentIds: number[], analysisType: string) {
   try {
-    // Get document content
+    // Get documents from database
     const documents = await Promise.all(
       documentIds.map(id => storage.getDocumentById(id))
     );
     
-    const documentContent = documents
-      .filter(doc => doc)
-      .map(doc => {
-        if (doc!.textContent) {
-          return `[${doc!.fileName}]:\n${doc!.textContent}`;
+    // Filter out any null documents
+    const validDocuments = documents.filter(doc => doc);
+    
+    // Prepare parts for Gemini
+    const parts: any[] = [];
+    
+    // Upload each document to Gemini
+    for (const doc of validDocuments) {
+      if (doc!.fileType === 'application/pdf' || doc!.fileType === 'text/plain') {
+        try {
+          const filePart = await uploadFileToGemini(
+            doc!.filePath,
+            doc!.fileType,
+            doc!.fileName
+          );
+          parts.push(filePart);
+        } catch (error) {
+          console.error(`Failed to upload file ${doc!.fileName}:`, error);
+          // If file upload fails, fall back to text content if available
+          if (doc!.textContent) {
+            parts.push({
+              text: `[${doc!.fileName}]:\n${doc!.textContent}`
+            });
+          }
         }
-        return `[${doc!.fileName}] - No text content available`;
-      })
-      .join('\n\n');
+      } else if (doc!.textContent) {
+        // For non-PDF/text files, use text content if available
+        parts.push({
+          text: `[${doc!.fileName}]:\n${doc!.textContent}`
+        });
+      }
+    }
 
     const prompt = `
-    You are a judicial evidence analysis assistant. Please analyze the following evidence documents.
+    You are a judicial evidence analysis assistant. I have uploaded ${validDocuments.length} evidence document(s) for you to analyze.
     
     Analysis Type: ${analysisType}
-    
-    Evidence Documents:
-    ${documentContent}
     
     Please provide:
     1. Evidence categorization and classification
@@ -190,9 +254,11 @@ export async function analyzeEvidence(documentIds: number[], analysisType: strin
     
     Format the response as a professional evidence analysis report.
     `;
+    
+    parts.push({ text: prompt });
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-    const response = await model.generateContent(prompt);
+    const response = await model.generateContent(parts);
 
     return {
       analysis: response.response.text() || "Failed to analyze evidence",

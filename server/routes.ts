@@ -114,16 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const documentData = insertDocumentSchema.parse({
-        userId,
-        caseId: req.body.caseId ? parseInt(req.body.caseId) : null,
-        fileName: file.originalname,
-        fileSize: file.size,
-        fileType: file.mimetype,
-        filePath: file.path,
-      });
-
-      const document = await storage.createDocument(documentData);
+      // Use processFileUpload to handle the file and optional text extraction
+      const document = await processFileUpload(file, userId, req.body.caseId ? parseInt(req.body.caseId) : null);
       res.json(document);
     } catch (error) {
       console.error("Error uploading document:", error);

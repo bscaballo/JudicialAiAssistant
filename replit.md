@@ -37,6 +37,14 @@ Preferred communication style: Simple, everyday language.
 - Fixed text formatting issues across all AI tool components with shared utility
 - All AI analysis tools now properly analyze actual document content rather than just file names
 
+### January 17, 2025 - Gemini Native PDF Processing Update
+- Transitioned from local PDF text extraction to Gemini's native PDF processing capabilities
+- Updated `generateCaseBrief` and `analyzeEvidence` functions to send actual PDF files to Gemini API
+- Made text extraction optional in file upload process (text extraction now serves as fallback only)
+- Gemini now receives PDFs as base64-encoded inline data for better document understanding
+- This resolves issues with scanned PDFs and image-heavy documents that pdf-parse couldn't handle
+- Text extraction remains as fallback for non-PDF file types or when file upload to Gemini fails
+
 ## System Architecture
 
 ### Frontend Architecture
