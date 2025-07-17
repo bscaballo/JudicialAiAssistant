@@ -329,6 +329,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google OAuth callback - GET route (used by Google)
+  app.get('/api/google-calendar/callback', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { code } = req.query;
+      
+      if (!code) {
+        return res.status(400).send('Authorization code is required');
+      }
+      
+      const tokens = await googleCalendarService.getTokens(code);
+      
+      // Store tokens in user record
+      await storage.updateUser(userId, {
+        googleAccessToken: tokens.access_token,
+        googleRefreshToken: tokens.refresh_token,
+        googleTokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+      });
+      
+      // Redirect to frontend with success message
+      res.send(`
+        <html>
+          <head>
+            <title>Google Calendar Connected</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+              .success { color: green; }
+              .button { background: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+            </style>
+          </head>
+          <body>
+            <h1 class="success">Google Calendar Connected Successfully!</h1>
+            <p>Your Google Calendar has been connected to your account.</p>
+            <p>You can now close this window and return to the application.</p>
+            <script>
+              // Close the popup window after 3 seconds
+              setTimeout(function() {
+                window.close();
+              }, 3000);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error connecting Google Calendar:", error);
+      res.status(500).send(`
+        <html>
+          <head>
+            <title>Connection Error</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+              .error { color: red; }
+            </style>
+          </head>
+          <body>
+            <h1 class="error">Connection Failed</h1>
+            <p>There was an error connecting your Google Calendar. Please try again.</p>
+            <p>Error: ${error.message}</p>
+            <script>
+              setTimeout(function() {
+                window.close();
+              }, 5000);
+            </script>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  // Legacy POST route for backward compatibility
   app.post('/api/google-calendar/callback', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
