@@ -14,10 +14,10 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     const documentContent = documents
       .filter(doc => doc)
       .map(doc => {
-        if (doc!.fileType === 'text/plain') {
-          return fs.readFileSync(doc!.filePath, 'utf-8');
+        if (doc!.textContent) {
+          return `[${doc!.fileName}]:\n${doc!.textContent}`;
         }
-        return `[${doc!.fileName}] - Content extraction not implemented for ${doc!.fileType}`;
+        return `[${doc!.fileName}] - No text content available`;
       })
       .join('\n\n');
 
@@ -165,10 +165,10 @@ export async function analyzeEvidence(documentIds: number[], analysisType: strin
     const documentContent = documents
       .filter(doc => doc)
       .map(doc => {
-        if (doc!.fileType === 'text/plain') {
-          return fs.readFileSync(doc!.filePath, 'utf-8');
+        if (doc!.textContent) {
+          return `[${doc!.fileName}]:\n${doc!.textContent}`;
         }
-        return `[${doc!.fileName}] - Content extraction not implemented for ${doc!.fileType}`;
+        return `[${doc!.fileName}] - No text content available`;
       })
       .join('\n\n');
 

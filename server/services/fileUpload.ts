@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { storage } from "../storage";
+import pdfParse from "pdf-parse";
 
 export async function processFileUpload(file: Express.Multer.File, userId: string, caseId?: number) {
   try {
@@ -10,7 +11,10 @@ export async function processFileUpload(file: Express.Multer.File, userId: strin
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    // Save file metadata to database
+    // Extract text content from the file
+    const textContent = await extractTextFromFile(file.path, file.mimetype);
+
+    // Save file metadata and text content to database
     const document = await storage.createDocument({
       userId,
       caseId: caseId || null,
@@ -18,6 +22,7 @@ export async function processFileUpload(file: Express.Multer.File, userId: strin
       fileSize: file.size,
       fileType: file.mimetype,
       filePath: file.path,
+      textContent,
     });
 
     return document;
@@ -33,12 +38,18 @@ export async function extractTextFromFile(filePath: string, fileType: string): P
       return fs.readFileSync(filePath, 'utf-8');
     }
     
-    // For other file types, we would need additional libraries
-    // For now, return a placeholder
-    return `[File content extraction not implemented for ${fileType}]`;
+    if (fileType === 'application/pdf') {
+      const pdfBuffer = fs.readFileSync(filePath);
+      const data = await pdfParse(pdfBuffer);
+      return data.text;
+    }
+    
+    // For other file types like Word documents, we could add more parsers
+    // For now, return a message indicating the file type is not supported
+    return `[Text extraction not supported for ${fileType}]`;
   } catch (error) {
     console.error("Error extracting text from file:", error);
-    return `[Error extracting text from file]`;
+    return `[Error extracting text from file: ${error.message}]`;
   }
 }
 

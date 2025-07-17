@@ -56,6 +56,7 @@ export const documents = pgTable("documents", {
   fileSize: integer("file_size").notNull(),
   fileType: varchar("file_type").notNull(),
   filePath: varchar("file_path").notNull(),
+  textContent: text("text_content"), // Extracted text content from the document
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
 

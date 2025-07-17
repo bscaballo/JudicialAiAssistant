@@ -8,6 +8,16 @@ The Judicial AI Assistant is a full-stack web application designed to help legal
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### January 17, 2025 - PDF Document Processing Implementation
+- Added PDF text extraction capability using pdf-parse library
+- Enhanced document schema to store extracted text content in `textContent` field
+- Updated file upload service to automatically extract text from PDFs during upload
+- Modified all Gemini AI functions to use stored text content instead of file metadata
+- Fixed text formatting issues across all AI tool components with shared utility
+- All AI analysis tools now properly analyze actual document content rather than just file names
+
 ## System Architecture
 
 ### Frontend Architecture
