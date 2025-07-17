@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
+import { formatMarkdownText } from "@/lib/textUtils";
 
 export default function LegalResearch() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,6 +81,8 @@ export default function LegalResearch() {
       description: "Citation export functionality will be implemented",
     });
   };
+
+
 
   return (
     <div className="space-y-6">
@@ -236,7 +239,7 @@ export default function LegalResearch() {
             <CardContent>
               <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
                 <div className="whitespace-pre-wrap">
-                  {searchResults.results}
+                  {formatMarkdownText(searchResults.results)}
                 </div>
               </div>
             </CardContent>

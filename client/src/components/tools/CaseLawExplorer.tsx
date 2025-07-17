@@ -9,6 +9,7 @@ import { BookOpen, Search, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { formatMarkdownText } from "@/lib/textUtils";
 
 export default function CaseLawExplorer() {
   const [topic, setTopic] = useState("");
@@ -162,7 +163,7 @@ export default function CaseLawExplorer() {
           <CardContent>
             <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
               <div className="whitespace-pre-wrap">
-                {explorationResults.analysis}
+                {formatMarkdownText(explorationResults.analysis)}
               </div>
             </div>
           </CardContent>

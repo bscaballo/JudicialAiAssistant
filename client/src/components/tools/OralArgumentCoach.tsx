@@ -10,6 +10,7 @@ import { Mic, Download, Wand2, Save, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { formatMarkdownText } from "@/lib/textUtils";
 
 export default function OralArgumentCoach() {
   const [caseDetails, setCaseDetails] = useState({
@@ -209,7 +210,7 @@ export default function OralArgumentCoach() {
           <CardContent>
             <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
               <div className="whitespace-pre-wrap">
-                {coachingResults.coaching}
+                {formatMarkdownText(coachingResults.coaching)}
               </div>
             </div>
           </CardContent>

@@ -9,6 +9,7 @@ import { Microscope, FileText, Upload, Download, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { formatMarkdownText } from "@/lib/textUtils";
 
 export default function EvidenceAnalyzer() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -248,7 +249,7 @@ export default function EvidenceAnalyzer() {
           <CardContent>
             <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
               <div className="whitespace-pre-wrap">
-                {analysisResults.analysis}
+                {formatMarkdownText(analysisResults.analysis)}
               </div>
             </div>
           </CardContent>

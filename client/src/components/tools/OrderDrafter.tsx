@@ -10,6 +10,7 @@ import { FileText, Download, Wand2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { formatMarkdownText } from "@/lib/textUtils";
 
 export default function OrderDrafter() {
   const [orderType, setOrderType] = useState("");
@@ -232,7 +233,7 @@ export default function OrderDrafter() {
           <CardContent>
             <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
               <div className="font-serif whitespace-pre-wrap">
-                {generatedOrder.content}
+                {formatMarkdownText(generatedOrder.content)}
               </div>
             </div>
           </CardContent>
