@@ -22,6 +22,8 @@ export default function LegalResearch() {
     federalCircuit: "",
     dateFrom: "",
     dateTo: "",
+    searchType: "all",
+    status: "all",
   });
   const [searchResults, setSearchResults] = useState<any>(null);
   const { toast } = useToast();
@@ -156,6 +158,21 @@ export default function LegalResearch() {
           {/* Search Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <Label htmlFor="searchType">Search Type</Label>
+              <Select value={filters.searchType} onValueChange={(value) => setFilters(prev => ({ ...prev, searchType: value }))}>
+                <SelectTrigger className="bg-slate-700 border-slate-600">
+                  <SelectValue placeholder="All Fields" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Fields</SelectItem>
+                  <SelectItem value="caseName">Case Name</SelectItem>
+                  <SelectItem value="docketNumber">Docket Number</SelectItem>
+                  <SelectItem value="citation">Citation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="jurisdiction">Jurisdiction</Label>
               <Select value={filters.jurisdiction} onValueChange={(value) => setFilters(prev => ({ ...prev, jurisdiction: value, state: "", federalCircuit: "" }))}>
                 <SelectTrigger className="bg-slate-700 border-slate-600">
@@ -268,6 +285,36 @@ export default function LegalResearch() {
                 className="bg-slate-700 border-slate-600"
               />
             </div>
+
+            <div>
+              <Label htmlFor="status">Case Status</Label>
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger className="bg-slate-700 border-slate-600">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="published">Published (Precedential)</SelectItem>
+                  <SelectItem value="unpublished">Unpublished</SelectItem>
+                  <SelectItem value="errata">Errata</SelectItem>
+                  <SelectItem value="separate">Separate Opinion</SelectItem>
+                  <SelectItem value="in-chambers">In-Chambers</SelectItem>
+                  <SelectItem value="unknown">Unknown</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Search Tips */}
+          <div className="mt-4 p-4 bg-slate-900 border border-slate-700 rounded-lg">
+            <h4 className="text-sm font-semibold text-blue-300 mb-2">Search Tips:</h4>
+            <ul className="text-xs text-slate-400 space-y-1">
+              <li>• Use quotes for exact phrases: "qualified immunity"</li>
+              <li>• Use AND/OR for boolean searches: Miranda AND waiver</li>
+              <li>• Use - to exclude terms: negligence -medical</li>
+              <li>• Use wildcards: immigra* (finds immigration, immigrant, etc.)</li>
+              <li>• Search specific fields: Select "Case Name" to search only case names</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
@@ -286,7 +333,7 @@ export default function LegalResearch() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {searchResults.courtListenerResults.results.slice(0, 5).map((case_: any, index: number) => (
+                  {searchResults.courtListenerResults.results.slice(0, 10).map((case_: any, index: number) => (
                     <div key={index} className="bg-slate-900 rounded-lg p-4 border-l-4 border-blue-500">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
@@ -294,6 +341,27 @@ export default function LegalResearch() {
                           <p className="text-sm text-slate-400">
                             {case_.citation} • {case_.court} • {case_.dateFiled}
                           </p>
+                          {case_.docketNumber && (
+                            <p className="text-xs text-slate-500 mt-1">
+                              Docket: {case_.docketNumber}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2">
+                            {case_.status && case_.status !== "unknown" && (
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                case_.status === "published" ? "bg-green-900/50 text-green-300" :
+                                case_.status === "unpublished" ? "bg-yellow-900/50 text-yellow-300" :
+                                "bg-slate-700 text-slate-300"
+                              }`}>
+                                {case_.status === "published" ? "Precedential" : case_.status}
+                              </span>
+                            )}
+                            {case_.citeCount > 0 && (
+                              <span className="text-xs text-slate-500">
+                                Cited {case_.citeCount} times
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <Button
                           variant="ghost"
@@ -304,7 +372,12 @@ export default function LegalResearch() {
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                       </div>
-                      <p className="text-sm text-slate-300">{case_.snippet}</p>
+                      <p className="text-sm text-slate-300 mt-3">{case_.snippet}</p>
+                      {case_.judges && case_.judges.length > 0 && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          Judges: {case_.judges.join(", ")}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

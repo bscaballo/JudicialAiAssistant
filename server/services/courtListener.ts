@@ -11,6 +11,9 @@ export interface CourtListenerCase {
   snippet: string;
   url: string;
   judges: string[];
+  status?: string;
+  citeCount?: number;
+  docketNumber?: string;
 }
 
 export interface CourtListenerSearchResult {
@@ -92,6 +95,17 @@ const FEDERAL_COURT_MAPPINGS = {
   district: ["dcd", "ded", "fld", "gad", "ilnd", "ilsd", "innd", "insd", "mad", "mdd", "mied", "miwd", "mnd", "mod", "mtd", "ndd", "ned", "nhd", "njd", "nmd", "nvd", "nyd", "nyed", "nynd", "nysd", "nywd", "ohnd", "ohsd", "okd", "ord", "pad", "paed", "pamd", "pawd", "rid", "scd", "sdd", "tnd", "txed", "txnd", "txsd", "txwd", "utd", "vad", "vtd", "wad", "waed", "wawd", "wdd", "wvnd", "wvsd", "wyd"]
 };
 
+export interface SearchFilters {
+  jurisdiction?: string;
+  courtLevel?: string;
+  state?: string;
+  federalCircuit?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  searchType?: "all" | "caseName" | "docketNumber" | "citation";
+  status?: string;
+}
+
 export async function searchCourtListener(
   query: string,
   jurisdiction?: string,
@@ -99,70 +113,111 @@ export async function searchCourtListener(
   dateFrom?: string,
   dateTo?: string,
   state?: string,
-  federalCircuit?: string
+  federalCircuit?: string,
+  searchType?: string,
+  status?: string
 ): Promise<CourtListenerSearchResult> {
   try {
-    const searchParams = new URLSearchParams({
-      q: query,
-      type: "o", // opinions
-      order_by: "score desc",
-      stat_Precedential: "on", // only precedential opinions
-    });
-
-    // Add date filters if provided
-    if (dateFrom) {
-      searchParams.append("filed_after", dateFrom);
+    // Build advanced query with field-specific searches
+    let enhancedQuery = query;
+    
+    // Add field-specific search if specified
+    if (searchType && searchType !== "all") {
+      switch (searchType) {
+        case "caseName":
+          enhancedQuery = `caseName:(${query})`;
+          break;
+        case "docketNumber":
+          enhancedQuery = `docketNumber:(${query})`;
+          break;
+        case "citation":
+          enhancedQuery = `citation:(${query})`;
+          break;
+      }
     }
-    if (dateTo) {
-      searchParams.append("filed_before", dateTo);
-    }
+    
+    let courtIds: string[] = [];
 
     // Build court list based on filters
-    let courtList: string[] = [];
-
     if (jurisdiction === "federal") {
       if (courtLevel === "supreme") {
-        courtList.push(FEDERAL_COURT_MAPPINGS.supreme);
-      } else if (courtLevel === "appeals" && federalCircuit) {
-        const circuitCourt = FEDERAL_COURT_MAPPINGS.appeals[federalCircuit];
-        if (circuitCourt) courtList.push(circuitCourt);
+        courtIds.push(FEDERAL_COURT_MAPPINGS.supreme);
+      } else if (courtLevel === "appeals") {
+        if (federalCircuit) {
+          const circuitCourt = FEDERAL_COURT_MAPPINGS.appeals[federalCircuit];
+          if (circuitCourt) courtIds.push(circuitCourt);
+        } else {
+          // All federal appeals courts
+          courtIds = courtIds.concat(Object.values(FEDERAL_COURT_MAPPINGS.appeals));
+        }
       } else if (courtLevel === "district") {
-        courtList = courtList.concat(FEDERAL_COURT_MAPPINGS.district);
+        courtIds = courtIds.concat(FEDERAL_COURT_MAPPINGS.district);
       } else if (!courtLevel || courtLevel === "all") {
-        // Add all federal courts
-        courtList.push(FEDERAL_COURT_MAPPINGS.supreme);
-        courtList = courtList.concat(Object.values(FEDERAL_COURT_MAPPINGS.appeals));
-        courtList = courtList.concat(FEDERAL_COURT_MAPPINGS.district);
+        // All federal courts
+        if (!federalCircuit) {
+          courtIds.push(FEDERAL_COURT_MAPPINGS.supreme);
+          courtIds = courtIds.concat(Object.values(FEDERAL_COURT_MAPPINGS.appeals));
+          courtIds = courtIds.concat(FEDERAL_COURT_MAPPINGS.district);
+        } else {
+          // Specific circuit - include supreme, circuit appeals, and district courts in that circuit
+          courtIds.push(FEDERAL_COURT_MAPPINGS.supreme);
+          const circuitCourt = FEDERAL_COURT_MAPPINGS.appeals[federalCircuit];
+          if (circuitCourt) courtIds.push(circuitCourt);
+          // Add district courts for the circuit (simplified - in production you'd map districts to circuits)
+        }
       }
     } else if (jurisdiction === "state" && state) {
       const stateMapping = STATE_COURT_MAPPINGS[state.toLowerCase()];
       if (stateMapping) {
         if (courtLevel === "supreme") {
-          courtList.push(stateMapping.supreme);
+          courtIds.push(stateMapping.supreme);
         } else if (courtLevel === "appeals") {
-          courtList = courtList.concat(stateMapping.appeals);
+          courtIds = courtIds.concat(stateMapping.appeals);
         } else if (courtLevel === "trial") {
-          courtList = courtList.concat(stateMapping.trial);
+          courtIds = courtIds.concat(stateMapping.trial);
         } else {
-          // Add all courts for the state
-          courtList.push(stateMapping.supreme);
-          courtList = courtList.concat(stateMapping.appeals);
-          courtList = courtList.concat(stateMapping.trial);
+          // All courts for the state
+          courtIds.push(stateMapping.supreme);
+          courtIds = courtIds.concat(stateMapping.appeals);
+          courtIds = courtIds.concat(stateMapping.trial);
         }
       }
-    } else if (!jurisdiction || jurisdiction === "all") {
-      // No specific filtering, search all courts
-      // This will search without court restriction
     }
 
-    // Apply court filter if we have specific courts
-    if (courtList.length > 0) {
-      searchParams.append("court", courtList.join(","));
+    // Add court_id field search to the query if we have specific courts
+    if (courtIds.length > 0) {
+      const courtQuery = courtIds.map(id => `court_id:${id}`).join(" OR ");
+      // Only wrap original query in parentheses if it's not already a field search
+      if (searchType && searchType !== "all") {
+        enhancedQuery = `${enhancedQuery} AND (${courtQuery})`;
+      } else {
+        enhancedQuery = `(${query}) AND (${courtQuery})`;
+      }
     }
+
+    // Add status filter if provided
+    if (status && status !== "all") {
+      enhancedQuery += ` AND status:${status}`;
+    }
+
+    // Add date range to query if provided
+    if (dateFrom || dateTo) {
+      const fromDate = dateFrom || "1800-01-01";
+      const toDate = dateTo || new Date().toISOString().split('T')[0];
+      enhancedQuery += ` AND dateFiled:[${fromDate} TO ${toDate}]`;
+    }
+
+    const searchParams = new URLSearchParams({
+      q: enhancedQuery,
+      type: "o", // opinions
+      order_by: "-dateFiled", // Most recent first
+    });
 
     const response = await fetch(`${COURTLISTENER_BASE_URL}/search/?${searchParams}`);
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`CourtListener API error: ${response.status}`, errorText);
       throw new Error(`CourtListener API error: ${response.status}`);
     }
 
@@ -172,13 +227,16 @@ export async function searchCourtListener(
       count: data.count || 0,
       results: (data.results || []).map((result: any) => ({
         id: result.id,
-        caseName: result.caseName || result.case_name || "Unknown Case",
-        citation: result.citation?.join(", ") || "No citation",
-        court: result.court || "Unknown Court",
-        dateFiled: result.date_filed || "Unknown Date",
-        snippet: result.snippet || "No snippet available",
-        url: result.absolute_url || `https://www.courtlistener.com${result.url}`,
-        judges: result.judges || [],
+        caseName: result.caseName || result.caseNameFull || result.case_name || "Unknown Case",
+        citation: Array.isArray(result.citation) ? result.citation.join(", ") : (result.citation || "No citation"),
+        court: result.court || result.court_citation_string || "Unknown Court",
+        dateFiled: result.dateFiled || result.date_filed || "Unknown Date",
+        snippet: result.snippet || result.text || "No snippet available",
+        url: result.absolute_url || `https://www.courtlistener.com${result.frontendUrl || result.url}`,
+        judges: result.panel_names || result.judges || [],
+        status: result.status || "unknown",
+        citeCount: result.citeCount || 0,
+        docketNumber: result.docketNumber || "",
       })),
     };
   } catch (error) {
@@ -189,6 +247,17 @@ export async function searchCourtListener(
     };
   }
 }
+
+// Export court mappings for use in UI
+export const AVAILABLE_STATES = Object.keys(STATE_COURT_MAPPINGS).map(key => ({
+  value: key,
+  label: key.toUpperCase()
+}));
+
+export const AVAILABLE_FEDERAL_CIRCUITS = Object.keys(FEDERAL_COURT_MAPPINGS.appeals).map(key => ({
+  value: key,
+  label: key === "dc" ? "D.C. Circuit" : key === "federal" ? "Federal Circuit" : `${key} Circuit`
+}))
 
 export async function getCaseDetails(caseId: string): Promise<CourtListenerCase | null> {
   try {

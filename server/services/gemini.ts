@@ -113,7 +113,9 @@ export async function performLegalResearch(query: string, filters: any) {
       filters.dateFrom,
       filters.dateTo,
       filters.state,
-      filters.federalCircuit
+      filters.federalCircuit,
+      filters.searchType,
+      filters.status
     );
 
     // Prepare case law context for Gemini

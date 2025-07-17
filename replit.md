@@ -69,6 +69,23 @@ Preferred communication style: Simple, everyday language.
 - Created placeholder service for future HuggingFace dataset integration
 - Improved search precision for jurisdiction-specific legal research
 
+### January 17, 2025 - Advanced CourtListener Search Integration
+- Implemented advanced CourtListener search operators and field-specific queries
+- Added search type selector (All Fields, Case Name, Docket Number, Citation)
+- Integrated case status filtering (Published/Precedential, Unpublished, Errata, etc.)
+- Enhanced search query builder using CourtListener's Lucene syntax:
+  - Field-specific searches using court_id, caseName, docketNumber, citation fields
+  - Date range queries using dateFiled field
+  - Boolean operators (AND, OR, NOT) support
+  - Wildcard and phrase search capabilities
+- Updated case display to show additional metadata:
+  - Precedential status badges
+  - Citation count indicators
+  - Docket numbers
+  - Panel judges
+- Added search tips help section explaining query operators
+- Increased result display from 5 to 10 cases for better research coverage
+
 ## System Architecture
 
 ### Frontend Architecture
