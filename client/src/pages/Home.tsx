@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/Sidebar";
+import Dashboard from "@/components/Dashboard";
 import CaseBriefer from "@/components/tools/CaseBriefer";
 import LegalResearch from "@/components/tools/LegalResearch";
 import CaseLawExplorer from "@/components/tools/CaseLawExplorer";
@@ -14,10 +15,12 @@ import { ActiveTab } from "@/types";
 
 export default function Home() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<ActiveTab>("case-briefer");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
 
   const renderContent = () => {
     switch (activeTab) {
+      case "dashboard":
+        return <Dashboard setActiveTab={setActiveTab} />;
       case "case-briefer":
         return <CaseBriefer />;
       case "legal-research":
@@ -37,7 +40,7 @@ export default function Home() {
       case "activity-history":
         return <ActivityHistory />;
       default:
-        return <CaseBriefer />;
+        return <Dashboard setActiveTab={setActiveTab} />;
     }
   };
 

@@ -9,7 +9,8 @@ import {
   Mic, 
   History, 
   Gavel,
-  LogOut
+  LogOut,
+  LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +24,7 @@ interface SidebarProps {
 }
 
 const NAVIGATION_ITEMS = [
+  { id: "dashboard" as ActiveTab, name: "Dashboard", icon: LayoutDashboard },
   { id: "case-briefer" as ActiveTab, name: "Case Briefer", icon: Briefcase },
   { id: "legal-research" as ActiveTab, name: "Legal Research", icon: Search },
   { id: "case-law-explorer" as ActiveTab, name: "Case Law Explorer", icon: BookOpen },

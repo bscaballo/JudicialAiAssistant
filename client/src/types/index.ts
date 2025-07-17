@@ -1,4 +1,5 @@
 export type ActiveTab = 
+  | 'dashboard'
   | 'case-briefer' 
   | 'legal-research' 
   | 'case-law-explorer' 
