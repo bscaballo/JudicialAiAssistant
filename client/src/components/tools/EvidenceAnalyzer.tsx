@@ -83,6 +83,36 @@ export default function EvidenceAnalyzer() {
     setSelectedFiles(files);
   };
 
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png'];
+    
+    const validFiles = droppedFiles.filter(file => {
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+      return allowedTypes.includes(extension);
+    });
+    
+    if (validFiles.length > 0) {
+      setSelectedFiles(validFiles);
+    }
+    
+    if (droppedFiles.length > validFiles.length) {
+      toast({
+        title: "Warning",
+        description: "Some files were skipped. Only PDF, DOC, DOCX, TXT, JPG, JPEG, and PNG files are allowed.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDocumentSelect = (documentId: number, checked: boolean) => {
     if (checked) {
       setSelectedDocuments(prev => [...prev, documentId]);
@@ -136,36 +166,41 @@ export default function EvidenceAnalyzer() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-slate-500 transition-colors">
-            <FileText className="h-10 w-10 text-slate-400 mx-auto mb-3" />
-            <p className="mb-2">Upload new evidence documents</p>
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-              onChange={handleFileSelect}
-              className="hidden"
-              id="evidence-upload"
-            />
-            <Label htmlFor="evidence-upload">
-              <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 border-blue-600">
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+            onChange={handleFileSelect}
+            className="hidden"
+            id="evidence-upload"
+          />
+          <Label htmlFor="evidence-upload" className="cursor-pointer block">
+            <div 
+              className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-slate-500 transition-colors"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <FileText className="h-10 w-10 text-slate-400 mx-auto mb-3" />
+              <p className="mb-2">Upload new evidence documents</p>
+              <p className="text-sm text-slate-400 mb-4">Drag and drop files here or click to browse</p>
+              <div className="bg-blue-600 hover:bg-blue-700 border-blue-600 border rounded-md px-4 py-2 text-white font-medium transition-colors inline-block">
                 Choose Files
-              </Button>
-            </Label>
-            {selectedFiles.length > 0 && (
-              <div className="mt-3 text-left">
-                <p className="text-sm text-slate-400 mb-2">Selected files:</p>
-                <ul className="text-sm space-y-1">
-                  {selectedFiles.map((file, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                      {file.name}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            )}
-          </div>
+            </div>
+          </Label>
+          {selectedFiles.length > 0 && (
+            <div className="mt-3 text-left">
+              <p className="text-sm text-slate-400 mb-2">Selected files:</p>
+              <ul className="text-sm space-y-1">
+                {selectedFiles.map((file, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-500" />
+                    {file.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Existing Documents */}
           {documents.length > 0 && (
