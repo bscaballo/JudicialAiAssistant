@@ -77,10 +77,8 @@ export default function Sidebar({ activeTab, setActiveTab, user, selectedCase, s
   // Create case mutation
   const createCaseMutation = useMutation({
     mutationFn: async (caseData: any) => {
-      return await apiRequest('/api/cases', {
-        method: 'POST',
-        body: JSON.stringify(caseData),
-      });
+      const response = await apiRequest('POST', '/api/cases', caseData);
+      return response.json();
     },
     onSuccess: (newCase) => {
       queryClient.invalidateQueries({ queryKey: ['/api/cases'] });
