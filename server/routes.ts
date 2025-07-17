@@ -21,6 +21,16 @@ import {
   generateJuryInstructions,
   coachOralArgument 
 } from "./services/gemini";
+import {
+  performLegalResearchWithOpenAI,
+  generateCaseBriefWithOpenAI,
+  exploreCaseLawWithOpenAI
+} from "./services/openai";
+import {
+  performLegalResearchWithOpenAI,
+  generateCaseBriefWithOpenAI,
+  exploreCaseLawWithOpenAI
+} from "./services/openai";
 import { processFileUpload, extractTextFromFile } from "./services/fileUpload";
 import { googleCalendarService } from "./services/googleCalendar";
 import fs from "fs";

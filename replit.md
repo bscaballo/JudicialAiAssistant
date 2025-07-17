@@ -10,6 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 17, 2025 - OpenAI Integration for Legal Research
+- Added OpenAI GPT-4o integration to improve legal research accuracy and reduce hallucinations
+- Implemented automatic AI provider switching - uses OpenAI when API key is available, falls back to Gemini
+- Created new OpenAI service module with specialized functions for:
+  - Legal research with strict citation requirements
+  - Case brief generation from document analysis
+  - Case law exploration with accurate precedent references
+- Configured lower temperature (0.3) for more factual and consistent responses
+- Added explicit instructions to only cite actual cases from CourtListener data
+- Enhanced prompts to prevent hallucination of case names, citations, or holdings
+- Updated all legal research tools to prioritize accuracy over creativity
+
 ### January 17, 2025 - Google OAuth Production Fix
 - Fixed OAuth redirect URI mismatch error for deployed application
 - Hardcoded production redirect URI to match Google Cloud Console configuration
@@ -132,7 +144,9 @@ Preferred communication style: Simple, everyday language.
 - **Sessions**: Authentication session storage
 
 #### AI Integration
-- **AI Provider**: Google Gemini AI (via @google/genai)
+- **Primary AI Provider**: OpenAI GPT-4o (when OPENAI_API_KEY is configured)
+- **Fallback AI Provider**: Google Gemini AI (via @google/genai)
+- **Provider Selection**: Automatic - uses OpenAI when available for better accuracy, falls back to Gemini
 - **Capabilities**: 
   - Case briefing and summarization
   - Legal research and case law exploration

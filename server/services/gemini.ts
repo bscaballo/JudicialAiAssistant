@@ -26,6 +26,8 @@ async function uploadFileToGemini(filePath: string, mimeType: string, displayNam
 
 export async function generateCaseBrief(documentIds: number[], caseDetails: any) {
   try {
+    // Check if OpenAI is configured
+    const useOpenAI = process.env.OPENAI_API_KEY ? true : false;
     // Get documents from database
     const documents = await Promise.all(
       documentIds.map(id => storage.getDocumentById(id))
@@ -86,6 +88,12 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     Format the response as a professional legal brief.
     `;
     
+    // If OpenAI is configured, use it for better accuracy
+    if (useOpenAI) {
+      const { generateCaseBriefWithOpenAI } = await import("./openai");
+      return await generateCaseBriefWithOpenAI(caseDetails, validDocuments);
+    }
+    
     parts.push({ text: prompt });
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
@@ -104,6 +112,9 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
 
 export async function performLegalResearch(query: string, filters: any) {
   try {
+    // Check if OpenAI is configured
+    const useOpenAI = process.env.OPENAI_API_KEY ? true : false;
+    
     // First, search CourtListener for actual case law
     const { searchCourtListener } = await import("./courtListener");
     const courtListenerResults = await searchCourtListener(
@@ -117,6 +128,12 @@ export async function performLegalResearch(query: string, filters: any) {
       filters.searchType,
       filters.status
     );
+    
+    // If OpenAI is configured, use it for better accuracy
+    if (useOpenAI) {
+      const { performLegalResearchWithOpenAI } = await import("./openai");
+      return await performLegalResearchWithOpenAI(query, filters, courtListenerResults);
+    }
 
     // Prepare case law context for Gemini
     const caseContext = courtListenerResults.results.slice(0, 10).map(caseItem => 
@@ -210,6 +227,15 @@ export async function performLegalResearch(query: string, filters: any) {
 
 export async function exploreCaseLaw(topic: string, jurisdiction: string, dateRange: any) {
   try {
+    // Check if OpenAI is configured
+    const useOpenAI = process.env.OPENAI_API_KEY ? true : false;
+    
+    // If OpenAI is configured, use it for better accuracy
+    if (useOpenAI) {
+      const { exploreCaseLawWithOpenAI } = await import("./openai");
+      return await exploreCaseLawWithOpenAI(topic, jurisdiction, dateRange);
+    }
+    
     const prompt = `
     You are a judicial research assistant. Please explore case law related to the following topic.
     
