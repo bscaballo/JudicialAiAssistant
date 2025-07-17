@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "../storage";
 import fs from "fs";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY2 || "");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function generateCaseBrief(documentIds: number[], caseDetails: any) {
   try {
@@ -44,7 +44,7 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     Format the response as a professional legal brief.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const response = await model.generateContent(prompt);
 
     return {
@@ -99,9 +99,9 @@ export async function performLegalResearch(query: string, filters: any) {
     Use the actual case names, citations, and courts from the data provided above.
     `;
 
-    // Use Gemini 1.5 Flash for stable results
+    // Use Gemini 2.5 Pro for enhanced results
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash"
+      model: "gemini-2.5-pro"
     });
     
     const response = await model.generateContent(prompt);
@@ -139,7 +139,7 @@ export async function exploreCaseLaw(topic: string, jurisdiction: string, dateRa
     Format the response as a comprehensive case law analysis.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const response = await model.generateContent(prompt);
 
     return {
@@ -191,7 +191,7 @@ export async function analyzeEvidence(documentIds: number[], analysisType: strin
     Format the response as a professional evidence analysis report.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const response = await model.generateContent(prompt);
 
     return {
@@ -231,7 +231,7 @@ export async function generateOrder(orderType: string, caseDetails: any, rulingD
     Format the response as a professional court order ready for judicial signature.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const response = await model.generateContent(prompt);
 
     return {
@@ -269,7 +269,7 @@ export async function generateJuryInstructions(caseDetails: any, charges: string
     Format the response as professional jury instructions suitable for court use.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const response = await model.generateContent(prompt);
 
     return {
@@ -308,7 +308,7 @@ export async function coachOralArgument(caseDetails: any, argumentsText: string,
     Format the response as a comprehensive oral argument preparation guide.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
     const response = await model.generateContent(prompt);
 
     return {
