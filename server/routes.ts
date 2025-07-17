@@ -330,10 +330,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Google OAuth callback - GET route (used by Google)
-  app.get('/api/google-calendar/callback', isAuthenticated, async (req: any, res) => {
+  app.get('/api/google-calendar/callback', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { code } = req.query;
+      // Extract user ID from session or state parameter
+      const { code, state } = req.query;
+      
+      if (!req.session || !req.session.user) {
+        return res.status(401).send('Session expired. Please log in again.');
+      }
+      
+      const userId = req.session.user.id;
       
       if (!code) {
         return res.status(400).send('Authorization code is required');
@@ -399,9 +405,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Legacy POST route for backward compatibility
-  app.post('/api/google-calendar/callback', isAuthenticated, async (req: any, res) => {
+  app.post('/api/google-calendar/callback', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ message: 'Session expired. Please log in again.' });
+      }
+      
+      const userId = req.session.user.id;
       const { code } = req.body;
       
       const tokens = await googleCalendarService.getTokens(code);
