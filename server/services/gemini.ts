@@ -88,10 +88,15 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
     Format the response as a professional legal brief.
     `;
     
-    // If OpenAI is configured, use it for better accuracy
+    // If OpenAI is configured, try to use it for better accuracy
     if (useOpenAI) {
-      const { generateCaseBriefWithOpenAI } = await import("./openai");
-      return await generateCaseBriefWithOpenAI(caseDetails, validDocuments);
+      try {
+        const { generateCaseBriefWithOpenAI } = await import("./openai");
+        return await generateCaseBriefWithOpenAI(caseDetails, validDocuments);
+      } catch (error: any) {
+        console.error("OpenAI failed, falling back to Gemini:", error.message);
+        // Continue with Gemini if OpenAI fails
+      }
     }
     
     parts.push({ text: prompt });
@@ -129,10 +134,15 @@ export async function performLegalResearch(query: string, filters: any) {
       filters.status
     );
     
-    // If OpenAI is configured, use it for better accuracy
+    // If OpenAI is configured, try to use it for better accuracy
     if (useOpenAI) {
-      const { performLegalResearchWithOpenAI } = await import("./openai");
-      return await performLegalResearchWithOpenAI(query, filters, courtListenerResults);
+      try {
+        const { performLegalResearchWithOpenAI } = await import("./openai");
+        return await performLegalResearchWithOpenAI(query, filters, courtListenerResults);
+      } catch (error: any) {
+        console.error("OpenAI failed, falling back to Gemini:", error.message);
+        // Continue with Gemini if OpenAI fails
+      }
     }
 
     // Prepare case law context for Gemini
@@ -154,7 +164,7 @@ export async function performLegalResearch(query: string, filters: any) {
     groundingQuery += " legal precedent case law analysis";
 
     const prompt = `
-    You are a legal research assistant with access to real case law data. Please research the following legal query and provide comprehensive results.
+    You are a legal research assistant analyzing actual case law data. Your role is to provide accurate legal analysis based ONLY on the real cases provided.
     
     Query: ${query}
     
@@ -165,19 +175,26 @@ export async function performLegalResearch(query: string, filters: any) {
     - Court Level: ${filters.courtLevel === 'all' ? 'All' : filters.courtLevel || 'All'}
     - Date Range: ${filters.dateFrom || 'All time'} to ${filters.dateTo || 'All time'}
     
+    IMPORTANT INSTRUCTIONS:
+    1. You MUST ONLY cite and analyze the actual cases provided below
+    2. DO NOT make up or hallucinate any case names, citations, or holdings
+    3. If the provided cases are not sufficient, explicitly state this limitation
+    4. All case citations must exactly match those provided in the data below
+    
     ACTUAL CASE LAW FOUND FROM COURTLISTENER:
     ${caseContext}
     
-    Using both the actual case law above and additional legal research, provide a comprehensive legal research report that includes:
-    1. **Case Law Analysis**: Analyze the actual cases found above, explaining their relevance to the query
-    2. **Key Legal Principles**: Extract and explain the main legal principles from these cases
-    3. **Precedential Value**: Explain the precedential value of these cases
-    4. **Recent Developments**: Include any recent legal developments or trends found through research
-    5. **Practical Applications**: How these cases apply to current legal practice
-    6. **Additional Research Recommendations**: Suggest further avenues for research
+    Based ONLY on the actual cases above, provide a comprehensive legal research report that includes:
+    1. **Case Law Analysis**: Analyze ONLY the actual cases found above, explaining their relevance to the query
+    2. **Key Legal Principles**: Extract and explain the main legal principles from these specific cases
+    3. **Precedential Value**: Explain the precedential value of these actual cases
+    4. **Limitations**: Clearly state any limitations in the available case law
+    5. **Practical Applications**: How these specific cases apply to current legal practice
+    6. **Additional Research Recommendations**: Suggest further avenues for research if the available cases are insufficient
     
     Format the response as a structured legal research report with proper citations.
-    Use the actual case names, citations, and courts from the data provided above.
+    Use ONLY the exact case names, citations, and courts from the data provided above.
+    If you need to reference legal principles not found in the provided cases, clearly indicate this as "general legal principle" rather than citing a specific case.
     `;
 
     // Use Gemini 2.5 Pro with Google Search grounding
@@ -230,26 +247,38 @@ export async function exploreCaseLaw(topic: string, jurisdiction: string, dateRa
     // Check if OpenAI is configured
     const useOpenAI = process.env.OPENAI_API_KEY ? true : false;
     
-    // If OpenAI is configured, use it for better accuracy
+    // If OpenAI is configured, try to use it for better accuracy
     if (useOpenAI) {
-      const { exploreCaseLawWithOpenAI } = await import("./openai");
-      return await exploreCaseLawWithOpenAI(topic, jurisdiction, dateRange);
+      try {
+        const { exploreCaseLawWithOpenAI } = await import("./openai");
+        return await exploreCaseLawWithOpenAI(topic, jurisdiction, dateRange);
+      } catch (error: any) {
+        console.error("OpenAI failed, falling back to Gemini:", error.message);
+        // Continue with Gemini if OpenAI fails
+      }
     }
     
     const prompt = `
-    You are a judicial research assistant. Please explore case law related to the following topic.
+    You are a judicial research assistant providing accurate information about case law.
     
     Topic: ${topic}
     Jurisdiction: ${jurisdiction}
     Date Range: ${dateRange.from} to ${dateRange.to}
     
-    Please provide:
-    1. Landmark cases in this area
-    2. Recent developments and trends
-    3. Circuit splits or conflicting decisions
-    4. Key legal principles and holdings
-    5. Practical applications for judges
+    IMPORTANT: For any cases you mention:
+    1. Clearly indicate if you're referring to well-known landmark cases
+    2. Include proper citations where available
+    3. If you're discussing general legal principles without specific cases, clearly state this
+    4. DO NOT make up case names or citations
     
+    Please provide:
+    1. Landmark cases in this area (with proper citations if known)
+    2. General legal principles and trends
+    3. Common issues and considerations
+    4. Practical applications for judges
+    5. Areas requiring further research
+    
+    Be explicit about the source and certainty of your information.
     Format the response as a comprehensive case law analysis.
     `;
 
