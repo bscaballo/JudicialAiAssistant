@@ -160,6 +160,8 @@ export const insertCaseSchema = createInsertSchema(cases).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dateFiled: z.string().optional().transform((val) => val ? new Date(val) : undefined),
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({
