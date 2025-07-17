@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { storage } from "../storage";
 import fs from "fs";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY2 || "");
 
 export async function generateCaseBrief(documentIds: number[], caseDetails: any) {
   try {
@@ -99,9 +99,9 @@ export async function performLegalResearch(query: string, filters: any) {
     Use the actual case names, citations, and courts from the data provided above.
     `;
 
-    // Use Gemini 2.5 Pro for enhanced results
+    // Use Gemini 1.5 Flash for stable results
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-pro"
+      model: "gemini-1.5-flash"
     });
     
     const response = await model.generateContent(prompt);
