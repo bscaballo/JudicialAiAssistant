@@ -23,10 +23,7 @@ export function useDrafts(toolType?: string) {
       partialOutput?: Record<string, any>;
       caseId?: number;
     }) => {
-      return apiRequest('/api/drafts', {
-        method: 'POST',
-        body: JSON.stringify(draftData),
-      });
+      return apiRequest('POST', '/api/drafts', draftData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/drafts'] });
@@ -35,10 +32,7 @@ export function useDrafts(toolType?: string) {
 
   const updateDraftMutation = useMutation({
     mutationFn: async ({ id, ...updates }: { id: number } & Partial<Draft>) => {
-      return apiRequest(`/api/drafts/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
+      return apiRequest('PUT', `/api/drafts/${id}`, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/drafts'] });
@@ -47,9 +41,7 @@ export function useDrafts(toolType?: string) {
 
   const deleteDraftMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/drafts/${id}`, {
-        method: 'DELETE',
-      });
+      return apiRequest('DELETE', `/api/drafts/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/drafts'] });
