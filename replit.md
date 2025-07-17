@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 17, 2025 - Dashboard Implementation
+- Added comprehensive dashboard as default landing page after login
+- Dashboard displays pending cases, calendar events, and AI tool access
+- Integrated dashboard with existing case and Google Calendar APIs
+- Added stats cards showing case counts and upcoming events
+- Dashboard provides quick access to all AI legal tools
+- Updated sidebar navigation to include dashboard at the top
+- Dashboard shows recent cases and upcoming calendar events
+
 ### January 17, 2025 - PDF Document Processing Implementation
 - Added PDF text extraction capability using pdf-parse library
 - Enhanced document schema to store extracted text content in `textContent` field
@@ -58,15 +67,16 @@ Preferred communication style: Simple, everyday language.
   - Daily docket management
 
 #### Tool Modules
-1. **Case Briefer**: Analyzes uploaded documents and generates case summaries
-2. **Legal Research**: Performs comprehensive legal research with filtering
-3. **Case Law Explorer**: Explores relevant case law by topic and jurisdiction
-4. **Evidence Analyzer**: Analyzes evidence documents for patterns and insights
-5. **Order Drafter**: Generates formal legal orders and rulings
-6. **Jury Instruction Drafter**: Creates jury instructions for specific cases
-7. **Daily Docket**: Manages court schedules and case calendars
-8. **Oral Argument Coach**: Provides coaching for oral arguments
-9. **Activity History**: Tracks and displays user interaction history
+1. **Dashboard**: Main overview page showing cases, calendar events, and tool access
+2. **Case Briefer**: Analyzes uploaded documents and generates case summaries
+3. **Legal Research**: Performs comprehensive legal research with filtering
+4. **Case Law Explorer**: Explores relevant case law by topic and jurisdiction
+5. **Evidence Analyzer**: Analyzes evidence documents for patterns and insights
+6. **Order Drafter**: Generates formal legal orders and rulings
+7. **Jury Instruction Drafter**: Creates jury instructions for specific cases
+8. **Daily Docket**: Manages court schedules and case calendars
+9. **Oral Argument Coach**: Provides coaching for oral arguments
+10. **Activity History**: Tracks and displays user interaction history
 
 ## Data Flow
 

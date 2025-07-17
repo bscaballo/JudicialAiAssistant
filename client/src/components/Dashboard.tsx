@@ -109,17 +109,17 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
     enabled: !!user
   });
 
+  // Fetch Google Calendar connection status
+  const { data: calendarStatus } = useQuery<{ connected: boolean }>({
+    queryKey: ['/api/google-calendar/status'],
+    enabled: !!user
+  });
+
   // Fetch Google Calendar events
   const { data: calendarEvents = [], isLoading: eventsLoading } = useQuery<GoogleCalendarEvent[]>({
     queryKey: ['/api/google-calendar/events'],
     enabled: !!user && calendarStatus?.connected,
     retry: false
-  });
-
-  // Fetch Google Calendar connection status
-  const { data: calendarStatus } = useQuery<{ connected: boolean }>({
-    queryKey: ['/api/google-calendar/status'],
-    enabled: !!user
   });
 
   const stats: DashboardStats = {
