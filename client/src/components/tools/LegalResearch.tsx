@@ -31,9 +31,10 @@ export default function LegalResearch() {
     },
     onSuccess: (data) => {
       setSearchResults(data);
+      const caseCount = data.courtListenerResults?.count || 0;
       toast({
         title: "Success",
-        description: "Legal research completed successfully",
+        description: `Legal research completed with ${caseCount} cases found`,
       });
     },
     onError: (error) => {
@@ -161,31 +162,100 @@ export default function LegalResearch() {
 
       {/* Search Results */}
       {searchResults && (
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                Search Results
-              </CardTitle>
-              <Button 
-                onClick={handleExportCitations}
-                variant="outline"
-                className="bg-slate-700 hover:bg-slate-600"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Citations
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
-              <div className="whitespace-pre-wrap">
-                {searchResults.results}
+        <div className="space-y-6">
+          {/* CourtListener Cases */}
+          {searchResults.courtListenerResults && searchResults.courtListenerResults.results.length > 0 && (
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  Found Cases ({searchResults.courtListenerResults.count} total)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {searchResults.courtListenerResults.results.slice(0, 5).map((case_: any, index: number) => (
+                    <div key={index} className="bg-slate-900 rounded-lg p-4 border-l-4 border-blue-500">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-blue-300">{case_.caseName}</h4>
+                          <p className="text-sm text-slate-400">
+                            {case_.citation} • {case_.court} • {case_.dateFiled}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(case_.url, '_blank')}
+                          className="text-blue-400 hover:text-blue-300"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-slate-300">{case_.snippet}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* AI Analysis */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Legal Research Analysis
+                </CardTitle>
+                <Button 
+                  onClick={handleExportCitations}
+                  variant="outline"
+                  className="bg-slate-700 hover:bg-slate-600"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-slate-900 rounded-lg p-6 text-sm leading-relaxed">
+                <div className="whitespace-pre-wrap">
+                  {searchResults.results}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Grounding Sources */}
+          {searchResults.groundingMetadata && searchResults.groundingMetadata.groundingChunks && (
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ExternalLink className="h-5 w-5" />
+                  Additional Sources
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {searchResults.groundingMetadata.groundingChunks.map((chunk: any, index: number) => (
+                    <div key={index} className="bg-slate-900 rounded-lg p-3">
+                      <a 
+                        href={chunk.web.uri} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                      >
+                        {chunk.web.title}
+                      </a>
+                      <p className="text-xs text-slate-400 mt-1">{chunk.web.uri}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   );

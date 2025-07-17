@@ -60,34 +60,60 @@ export async function generateCaseBrief(documentIds: number[], caseDetails: any)
 
 export async function performLegalResearch(query: string, filters: any) {
   try {
+    // First, search CourtListener for actual case law
+    const { searchCourtListener } = await import("./courtListener");
+    const courtListenerResults = await searchCourtListener(
+      query,
+      filters.jurisdiction,
+      filters.courtLevel,
+      filters.dateFrom,
+      filters.dateTo
+    );
+
+    // Prepare case law context for Gemini
+    const caseContext = courtListenerResults.results.slice(0, 10).map(caseItem => 
+      `Case: ${caseItem.caseName}\nCitation: ${caseItem.citation}\nCourt: ${caseItem.court}\nDate: ${caseItem.dateFiled}\nSnippet: ${caseItem.snippet}\nURL: ${caseItem.url}`
+    ).join('\n\n');
+
     const prompt = `
-    You are a legal research assistant. Please research the following legal query and provide comprehensive results.
+    You are a legal research assistant with access to real case law data. Please research the following legal query and provide comprehensive results.
     
     Query: ${query}
     
-    Filters:
+    Filters Applied:
     - Jurisdiction: ${filters.jurisdiction === 'all' ? 'All' : filters.jurisdiction || 'All'}
     - Court Level: ${filters.courtLevel === 'all' ? 'All' : filters.courtLevel || 'All'}
-    - Date Range: ${filters.dateRange || 'All time'}
+    - Date Range: ${filters.dateFrom || 'All time'} to ${filters.dateTo || 'All time'}
     
-    Please provide:
-    1. Relevant case law with citations
-    2. Applicable statutes and regulations
-    3. Key legal principles
-    4. Recent developments in this area of law
-    5. Practical implications for judicial decision-making
+    ACTUAL CASE LAW FOUND:
+    ${caseContext}
     
-    Format the response as a structured legal research report.
+    Please provide a comprehensive legal research report that includes:
+    1. **Case Law Analysis**: Analyze the actual cases found above, explaining their relevance to the query
+    2. **Key Legal Principles**: Extract and explain the main legal principles from these cases
+    3. **Precedential Value**: Explain the precedential value of these cases
+    4. **Practical Applications**: How these cases apply to current legal practice
+    5. **Additional Research Recommendations**: Suggest further avenues for research
+    
+    Format the response as a structured legal research report with proper citations.
+    Use the actual case names, citations, and courts from the data provided above.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Use Gemini 2.5 Pro with Google Search grounding for enhanced results
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-pro",
+      tools: [{ googleSearchRetrieval: {} }]
+    });
+    
     const response = await model.generateContent(prompt);
 
     return {
       results: response.response.text() || "Failed to perform legal research",
       query,
       filters,
+      courtListenerResults,
       searchedAt: new Date().toISOString(),
+      groundingMetadata: response.response.candidates?.[0]?.groundingMetadata || null,
     };
   } catch (error) {
     console.error("Error performing legal research:", error);
