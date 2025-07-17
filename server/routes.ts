@@ -318,8 +318,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Could not extract text from the uploaded document" });
       }
       
-      if (textContent.startsWith('[Text extraction not supported') || textContent.startsWith('[Error extracting text')) {
+      if (textContent.startsWith('[Text extraction not supported') || textContent.startsWith('[Error extracting text') || textContent.startsWith('[PDF appears to be empty')) {
         return res.status(400).json({ message: textContent });
+      }
+      
+      // Check if we have meaningful content (more than just whitespace)
+      if (textContent.trim().length < 50) {
+        return res.status(400).json({ message: "The document appears to contain very little text. Please ensure it's a text-based PDF, not a scanned image." });
       }
       
       // Use AI to extract case information

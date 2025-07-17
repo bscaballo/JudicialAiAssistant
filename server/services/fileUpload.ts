@@ -34,13 +34,27 @@ export async function processFileUpload(file: Express.Multer.File, userId: strin
 
 export async function extractTextFromFile(filePath: string, fileType: string): Promise<string> {
   try {
+    console.log(`Extracting text from file: ${filePath}, type: ${fileType}`);
+    
     if (fileType === 'text/plain') {
-      return fs.readFileSync(filePath, 'utf-8');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      console.log(`Text file content length: ${content.length}`);
+      return content;
     }
     
     if (fileType === 'application/pdf') {
       const pdfBuffer = fs.readFileSync(filePath);
+      console.log(`PDF buffer size: ${pdfBuffer.length} bytes`);
+      
       const data = await pdfParse(pdfBuffer);
+      console.log(`PDF parsed successfully. Text length: ${data.text.length}`);
+      console.log(`PDF text preview: "${data.text.substring(0, 200)}"`);
+      
+      if (!data.text || data.text.trim().length === 0) {
+        console.warn("PDF text extraction returned empty content");
+        return `[PDF appears to be empty or contains only images/scanned content]`;
+      }
+      
       return data.text;
     }
     
