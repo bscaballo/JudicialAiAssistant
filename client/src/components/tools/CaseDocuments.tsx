@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Download, Trash2, Upload, Calendar, FileIcon } from "lucide-react";
+import { FileText, Download, Trash2, Upload, Calendar, FileIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { type Case, type Document } from "@shared/schema";
 import { format } from "date-fns";
+import { queryClient } from "@/lib/queryClient";
 
 interface CaseDocumentsProps {
   selectedCase: Case | null;
 }
 
 export function CaseDocuments({ selectedCase }: CaseDocumentsProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
   const { data: documents, isLoading, refetch } = useQuery<Document[]>({
     queryKey: ['/api/documents', selectedCase?.id],
     queryOptions: {
@@ -24,6 +28,40 @@ export function CaseDocuments({ selectedCase }: CaseDocumentsProps) {
       const response = await fetch(`/api/documents?caseId=${selectedCase.id}`);
       if (!response.ok) throw new Error('Failed to fetch documents');
       return response.json();
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('caseId', selectedCase!.id.toString());
+
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload document');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents', selectedCase?.id] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload document",
+        variant: "destructive",
+      });
     },
   });
 
@@ -52,6 +90,46 @@ export function CaseDocuments({ selectedCase }: CaseDocumentsProps) {
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!allowedTypes.includes(fileExtension)) {
+      toast({
+        title: "Invalid file type",
+        description: "Only PDF, DOC, DOCX, and TXT files are allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Maximum file size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    await uploadMutation.mutateAsync(file);
+    setUploading(false);
+
+    // Clear the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   if (!selectedCase) {
     return (
       <div className="p-6">
@@ -72,6 +150,13 @@ export function CaseDocuments({ selectedCase }: CaseDocumentsProps) {
 
   return (
     <div className="p-6 space-y-6">
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept=".pdf,.doc,.docx,.txt"
+        className="hidden"
+      />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -79,9 +164,18 @@ export function CaseDocuments({ selectedCase }: CaseDocumentsProps) {
               <FileText className="h-5 w-5" />
               Case Documents
             </div>
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Document
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={triggerFileInput}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {uploading ? 'Uploading...' : 'Upload Document'}
             </Button>
           </CardTitle>
           <CardDescription>
@@ -147,9 +241,18 @@ export function CaseDocuments({ selectedCase }: CaseDocumentsProps) {
               <p className="text-slate-600 dark:text-slate-400">
                 No documents uploaded for this case yet
               </p>
-              <Button variant="outline" className="mt-4">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload First Document
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={triggerFileInput}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                {uploading ? 'Uploading...' : 'Upload First Document'}
               </Button>
             </div>
           )}
