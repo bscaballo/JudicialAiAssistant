@@ -308,6 +308,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract text content from the file
       const textContent = await extractTextFromFile(file.path, file.mimetype);
       
+      // Log the extracted text for debugging
+      console.log("File type:", file.mimetype);
+      console.log("Text content length:", textContent.length);
+      console.log("Text content preview:", textContent.substring(0, 500));
+      
+      // Check if text extraction was successful
+      if (!textContent || textContent.length === 0) {
+        return res.status(400).json({ message: "Could not extract text from the uploaded document" });
+      }
+      
+      if (textContent.startsWith('[Text extraction not supported') || textContent.startsWith('[Error extracting text')) {
+        return res.status(400).json({ message: textContent });
+      }
+      
       // Use AI to extract case information
       const { generateCaseInfo } = await import("./services/caseExtractor");
       const caseInfo = await generateCaseInfo(textContent);

@@ -1,0 +1,21 @@
+IN THE SUPERIOR COURT OF CALIFORNIA
+IN AND FOR THE COUNTY OF LOS ANGELES
+
+JANE SMITH,                    ) Case No. 2024-CV-001234
+                              )
+    Plaintiff,                ) COMPLAINT FOR DAMAGES
+                              )
+vs.                          )
+                              )
+ACME CORPORATION,             )
+                              )
+    Defendant.                )
+______________________________)
+
+TO DEFENDANT ACME CORPORATION:
+
+YOU ARE BEING SUED BY PLAINTIFF JANE SMITH.
+
+NOTICE! You have been sued. The court may decide against you without your being heard unless you respond within 30 days.
+
+Filed: March 15, 2024
