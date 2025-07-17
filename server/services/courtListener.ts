@@ -18,12 +18,88 @@ export interface CourtListenerSearchResult {
   results: CourtListenerCase[];
 }
 
+// Court mappings for states and federal circuits
+const STATE_COURT_MAPPINGS: { [key: string]: { supreme: string; appeals: string[]; trial: string[] } } = {
+  nm: {
+    supreme: "nmcoa", // New Mexico Supreme Court
+    appeals: ["nmapp"], // New Mexico Court of Appeals
+    trial: ["nm"] // New Mexico District Courts
+  },
+  tx: {
+    supreme: "tex", // Texas Supreme Court
+    appeals: ["texapp1", "texapp2", "texapp3", "texapp4", "texapp5", "texapp6", "texapp7", "texapp8", "texapp9", "texapp10", "texapp11", "texapp12", "texapp13", "texapp14"],
+    trial: ["txd"]
+  },
+  az: {
+    supreme: "ariz", // Arizona Supreme Court
+    appeals: ["arizctapp"], // Arizona Court of Appeals
+    trial: ["azd"]
+  },
+  ca: {
+    supreme: "cal", // California Supreme Court
+    appeals: ["calctapp1", "calctapp2", "calctapp3", "calctapp4", "calctapp5", "calctapp6"],
+    trial: ["casd", "cand", "cacd", "caed"]
+  },
+  ny: {
+    supreme: "ny", // New York Court of Appeals (highest court)
+    appeals: ["nyappterm1", "nyappterm2", "nyappdiv1", "nyappdiv2", "nyappdiv3", "nyappdiv4"],
+    trial: ["nyd"]
+  },
+  fl: {
+    supreme: "fla", // Florida Supreme Court
+    appeals: ["flaapp1", "flaapp2", "flaapp3", "flaapp4", "flaapp5"],
+    trial: ["fld"]
+  },
+  co: {
+    supreme: "colo", // Colorado Supreme Court
+    appeals: ["coloctapp"], // Colorado Court of Appeals
+    trial: ["cod"]
+  },
+  nv: {
+    supreme: "nev", // Nevada Supreme Court
+    appeals: [], // Nevada has no intermediate appellate court
+    trial: ["nvd"]
+  },
+  ut: {
+    supreme: "utah", // Utah Supreme Court
+    appeals: ["utahctapp"], // Utah Court of Appeals
+    trial: ["utd"]
+  },
+  ok: {
+    supreme: "okla", // Oklahoma Supreme Court
+    appeals: ["oklacrimapp", "oklacivapp"], // Criminal and Civil Appeals
+    trial: ["okd"]
+  }
+};
+
+const FEDERAL_COURT_MAPPINGS = {
+  supreme: "scotus",
+  appeals: {
+    "1st": "ca1",
+    "2nd": "ca2",
+    "3rd": "ca3",
+    "4th": "ca4",
+    "5th": "ca5",
+    "6th": "ca6",
+    "7th": "ca7",
+    "8th": "ca8",
+    "9th": "ca9",
+    "10th": "ca10",
+    "11th": "ca11",
+    "dc": "cadc",
+    "federal": "cafc"
+  },
+  district: ["dcd", "ded", "fld", "gad", "ilnd", "ilsd", "innd", "insd", "mad", "mdd", "mied", "miwd", "mnd", "mod", "mtd", "ndd", "ned", "nhd", "njd", "nmd", "nvd", "nyd", "nyed", "nynd", "nysd", "nywd", "ohnd", "ohsd", "okd", "ord", "pad", "paed", "pamd", "pawd", "rid", "scd", "sdd", "tnd", "txed", "txnd", "txsd", "txwd", "utd", "vad", "vtd", "wad", "waed", "wawd", "wdd", "wvnd", "wvsd", "wyd"]
+};
+
 export async function searchCourtListener(
   query: string,
   jurisdiction?: string,
   courtLevel?: string,
   dateFrom?: string,
-  dateTo?: string
+  dateTo?: string,
+  state?: string,
+  federalCircuit?: string
 ): Promise<CourtListenerSearchResult> {
   try {
     const searchParams = new URLSearchParams({
@@ -41,23 +117,47 @@ export async function searchCourtListener(
       searchParams.append("filed_before", dateTo);
     }
 
-    // Add jurisdiction filter
-    if (jurisdiction && jurisdiction !== "all") {
-      if (jurisdiction === "federal") {
-        searchParams.append("court", "scotus,ca1,ca2,ca3,ca4,ca5,ca6,ca7,ca8,ca9,ca10,ca11,cadc,cafc");
-      } else if (jurisdiction === "state") {
-        // Add state court codes - this is a simplified example
-        searchParams.append("court", "cal,ny,tx,fl"); // Major state courts
+    // Build court list based on filters
+    let courtList: string[] = [];
+
+    if (jurisdiction === "federal") {
+      if (courtLevel === "supreme") {
+        courtList.push(FEDERAL_COURT_MAPPINGS.supreme);
+      } else if (courtLevel === "appeals" && federalCircuit) {
+        const circuitCourt = FEDERAL_COURT_MAPPINGS.appeals[federalCircuit];
+        if (circuitCourt) courtList.push(circuitCourt);
+      } else if (courtLevel === "district") {
+        courtList = courtList.concat(FEDERAL_COURT_MAPPINGS.district);
+      } else if (!courtLevel || courtLevel === "all") {
+        // Add all federal courts
+        courtList.push(FEDERAL_COURT_MAPPINGS.supreme);
+        courtList = courtList.concat(Object.values(FEDERAL_COURT_MAPPINGS.appeals));
+        courtList = courtList.concat(FEDERAL_COURT_MAPPINGS.district);
       }
+    } else if (jurisdiction === "state" && state) {
+      const stateMapping = STATE_COURT_MAPPINGS[state.toLowerCase()];
+      if (stateMapping) {
+        if (courtLevel === "supreme") {
+          courtList.push(stateMapping.supreme);
+        } else if (courtLevel === "appeals") {
+          courtList = courtList.concat(stateMapping.appeals);
+        } else if (courtLevel === "trial") {
+          courtList = courtList.concat(stateMapping.trial);
+        } else {
+          // Add all courts for the state
+          courtList.push(stateMapping.supreme);
+          courtList = courtList.concat(stateMapping.appeals);
+          courtList = courtList.concat(stateMapping.trial);
+        }
+      }
+    } else if (!jurisdiction || jurisdiction === "all") {
+      // No specific filtering, search all courts
+      // This will search without court restriction
     }
 
-    // Add court level filter
-    if (courtLevel && courtLevel !== "all") {
-      if (courtLevel === "supreme") {
-        searchParams.append("court", "scotus");
-      } else if (courtLevel === "appeals") {
-        searchParams.append("court", "ca1,ca2,ca3,ca4,ca5,ca6,ca7,ca8,ca9,ca10,ca11,cadc,cafc");
-      }
+    // Apply court filter if we have specific courts
+    if (courtList.length > 0) {
+      searchParams.append("court", courtList.join(","));
     }
 
     const response = await fetch(`${COURTLISTENER_BASE_URL}/search/?${searchParams}`);

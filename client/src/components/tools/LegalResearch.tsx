@@ -18,6 +18,8 @@ export default function LegalResearch() {
   const [filters, setFilters] = useState({
     jurisdiction: "all",
     courtLevel: "all",
+    state: "",
+    federalCircuit: "",
     dateFrom: "",
     dateTo: "",
   });
@@ -105,6 +107,11 @@ export default function LegalResearch() {
       <div className="mb-8">
         <h2 className="text-3xl font-serif font-bold mb-2">Legal Research</h2>
         <p className="text-slate-400">Search legal databases and find relevant precedents</p>
+        <div className="mt-4 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+          <p className="text-sm text-blue-300">
+            <span className="font-semibold">Enhanced Search:</span> Now supports specific state and federal circuit filtering. Search NM Supreme Court, 10th Circuit Court of Appeals, and more.
+          </p>
+        </div>
       </div>
 
       {/* Search Interface */}
@@ -147,10 +154,10 @@ export default function LegalResearch() {
           </div>
 
           {/* Search Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="jurisdiction">Jurisdiction</Label>
-              <Select value={filters.jurisdiction} onValueChange={(value) => setFilters(prev => ({ ...prev, jurisdiction: value }))}>
+              <Select value={filters.jurisdiction} onValueChange={(value) => setFilters(prev => ({ ...prev, jurisdiction: value, state: "", federalCircuit: "" }))}>
                 <SelectTrigger className="bg-slate-700 border-slate-600">
                   <SelectValue placeholder="All Jurisdictions" />
                 </SelectTrigger>
@@ -158,10 +165,60 @@ export default function LegalResearch() {
                   <SelectItem value="all">All Jurisdictions</SelectItem>
                   <SelectItem value="federal">Federal</SelectItem>
                   <SelectItem value="state">State</SelectItem>
-                  <SelectItem value="local">Local</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            
+            {filters.jurisdiction === "state" && (
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Select value={filters.state} onValueChange={(value) => setFilters(prev => ({ ...prev, state: value }))}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectValue placeholder="Select State" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nm">New Mexico</SelectItem>
+                    <SelectItem value="tx">Texas</SelectItem>
+                    <SelectItem value="az">Arizona</SelectItem>
+                    <SelectItem value="ca">California</SelectItem>
+                    <SelectItem value="ny">New York</SelectItem>
+                    <SelectItem value="fl">Florida</SelectItem>
+                    <SelectItem value="co">Colorado</SelectItem>
+                    <SelectItem value="nv">Nevada</SelectItem>
+                    <SelectItem value="ut">Utah</SelectItem>
+                    <SelectItem value="ok">Oklahoma</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {filters.jurisdiction === "federal" && (
+              <div>
+                <Label htmlFor="federalCircuit">Federal Circuit</Label>
+                <Select value={filters.federalCircuit} onValueChange={(value) => setFilters(prev => ({ ...prev, federalCircuit: value }))}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectValue placeholder="All Circuits" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Circuits</SelectItem>
+                    <SelectItem value="1st">1st Circuit</SelectItem>
+                    <SelectItem value="2nd">2nd Circuit</SelectItem>
+                    <SelectItem value="3rd">3rd Circuit</SelectItem>
+                    <SelectItem value="4th">4th Circuit</SelectItem>
+                    <SelectItem value="5th">5th Circuit</SelectItem>
+                    <SelectItem value="6th">6th Circuit</SelectItem>
+                    <SelectItem value="7th">7th Circuit</SelectItem>
+                    <SelectItem value="8th">8th Circuit</SelectItem>
+                    <SelectItem value="9th">9th Circuit</SelectItem>
+                    <SelectItem value="10th">10th Circuit (NM, CO, WY, UT, KS, OK)</SelectItem>
+                    <SelectItem value="11th">11th Circuit</SelectItem>
+                    <SelectItem value="dc">D.C. Circuit</SelectItem>
+                    <SelectItem value="federal">Federal Circuit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             <div>
               <Label htmlFor="courtLevel">Court Level</Label>
               <Select value={filters.courtLevel} onValueChange={(value) => setFilters(prev => ({ ...prev, courtLevel: value }))}>
@@ -170,12 +227,26 @@ export default function LegalResearch() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Courts</SelectItem>
-                  <SelectItem value="supreme">Supreme Court</SelectItem>
-                  <SelectItem value="appeals">Appeals Court</SelectItem>
-                  <SelectItem value="district">District Court</SelectItem>
+                  <SelectItem value="supreme">
+                    {filters.jurisdiction === "federal" ? "Supreme Court of the US" : 
+                     filters.jurisdiction === "state" && filters.state ? `${filters.state.toUpperCase()} Supreme Court` : 
+                     "Supreme Court"}
+                  </SelectItem>
+                  <SelectItem value="appeals">
+                    {filters.jurisdiction === "federal" ? "Court of Appeals" : 
+                     filters.jurisdiction === "state" && filters.state ? `${filters.state.toUpperCase()} Appellate Courts` : 
+                     "Appeals Court"}
+                  </SelectItem>
+                  {filters.jurisdiction === "state" && (
+                    <SelectItem value="trial">Trial Courts</SelectItem>
+                  )}
+                  {filters.jurisdiction === "federal" && (
+                    <SelectItem value="district">District Court</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
+            
             <div>
               <Label htmlFor="dateFrom">From Date</Label>
               <Input
@@ -186,6 +257,7 @@ export default function LegalResearch() {
                 className="bg-slate-700 border-slate-600"
               />
             </div>
+            
             <div>
               <Label htmlFor="dateTo">To Date</Label>
               <Input

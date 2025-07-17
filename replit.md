@@ -55,6 +55,20 @@ Preferred communication style: Simple, everyday language.
 - Also updated case extraction service (`generateCaseInfoFromFile`) to use native PDF processing
 - Fixed "Add New Case" upload pleading functionality to properly extract case info from scanned PDFs
 
+### January 17, 2025 - Enhanced Legal Research Functionality
+- Enhanced legal research tool with granular jurisdiction and court filtering
+- Added state-specific court filters (NM, TX, AZ, CA, NY, FL, CO, NV, UT, OK)
+- Added federal circuit court filters (1st-11th Circuits, DC Circuit, Federal Circuit)
+- Updated CourtListener integration to support specific court searches:
+  - State Supreme Courts (e.g., NM Supreme Court)
+  - State Appellate Courts (e.g., NM Court of Appeals)
+  - Federal Circuit Courts of Appeals (e.g., 10th Circuit)
+  - Federal District Courts
+- Updated UI with dynamic court level labels based on jurisdiction selection
+- Added informational note about HuggingFace Caselaw Access Project dataset (99% of US case law)
+- Created placeholder service for future HuggingFace dataset integration
+- Improved search precision for jurisdiction-specific legal research
+
 ## System Architecture
 
 ### Frontend Architecture

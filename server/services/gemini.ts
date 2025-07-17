@@ -111,7 +111,9 @@ export async function performLegalResearch(query: string, filters: any) {
       filters.jurisdiction,
       filters.courtLevel,
       filters.dateFrom,
-      filters.dateTo
+      filters.dateTo,
+      filters.state,
+      filters.federalCircuit
     );
 
     // Prepare case law context for Gemini
@@ -126,6 +128,8 @@ export async function performLegalResearch(query: string, filters: any) {
     
     Filters Applied:
     - Jurisdiction: ${filters.jurisdiction === 'all' ? 'All' : filters.jurisdiction || 'All'}
+    ${filters.jurisdiction === 'state' && filters.state ? `- State: ${filters.state.toUpperCase()}` : ''}
+    ${filters.jurisdiction === 'federal' && filters.federalCircuit ? `- Federal Circuit: ${filters.federalCircuit}` : ''}
     - Court Level: ${filters.courtLevel === 'all' ? 'All' : filters.courtLevel || 'All'}
     - Date Range: ${filters.dateFrom || 'All time'} to ${filters.dateTo || 'All time'}
     
