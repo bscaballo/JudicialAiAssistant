@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Gavel } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, Gavel, Link, RefreshCw, Unlink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { format, addDays, subDays } from "date-fns";
@@ -31,6 +31,29 @@ export default function DailyDocket() {
     },
   });
 
+  // Google Calendar integration
+  const { data: googleCalendarStatus } = useQuery({
+    queryKey: ["/api/google-calendar/status"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/google-calendar/status");
+      return response.json();
+    },
+  });
+
+  const { data: calendarEvents = [] } = useQuery({
+    queryKey: ["/api/google-calendar/events", selectedDate.toISOString().split('T')[0]],
+    queryFn: async () => {
+      const startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const response = await apiRequest("GET", `/api/google-calendar/events?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+      return response.json();
+    },
+    enabled: googleCalendarStatus?.connected === true,
+  });
+
   const addEntryMutation = useMutation({
     mutationFn: async (entryData: any) => {
       const response = await apiRequest("POST", "/api/docket/entries", entryData);
@@ -49,6 +72,92 @@ export default function DailyDocket() {
       toast({
         title: "Error",
         description: "Failed to add docket entry",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const connectCalendarMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("GET", "/api/google-calendar/auth-url");
+      const { authUrl } = await response.json();
+      
+      // Open Google Calendar authorization in a new window
+      const authWindow = window.open(authUrl, 'google-calendar-auth', 'width=600,height=600');
+      
+      // Wait for the authorization to complete
+      return new Promise((resolve, reject) => {
+        const checkClosed = setInterval(() => {
+          if (authWindow?.closed) {
+            clearInterval(checkClosed);
+            // Refresh the calendar status
+            queryClient.invalidateQueries({ queryKey: ["/api/google-calendar/status"] });
+            resolve(true);
+          }
+        }, 1000);
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Google Calendar connected successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to connect Google Calendar",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const syncCalendarMutation = useMutation({
+    mutationFn: async () => {
+      const startDate = new Date(selectedDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(selectedDate);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const response = await apiRequest("POST", "/api/google-calendar/sync", {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/google-calendar/events"] });
+      toast({
+        title: "Success",
+        description: "Calendar events synced successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to sync calendar events",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const disconnectCalendarMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/google-calendar/disconnect");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/google-calendar/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/google-calendar/events"] });
+      toast({
+        title: "Success",
+        description: "Google Calendar disconnected successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to disconnect Google Calendar",
         variant: "destructive",
       });
     },
@@ -81,6 +190,7 @@ export default function DailyDocket() {
       case "hearing": return "bg-blue-600";
       case "motion": return "bg-green-600";
       case "trial": return "bg-purple-600";
+      case "calendar": return "bg-purple-600";
       default: return "bg-gray-600";
     }
   };
@@ -90,11 +200,30 @@ export default function DailyDocket() {
       case "hearing": return <Calendar className="h-4 w-4" />;
       case "motion": return <Gavel className="h-4 w-4" />;
       case "trial": return <Gavel className="h-4 w-4" />;
+      case "calendar": return <Calendar className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
 
-  const sortedEntries = [...docketEntries].sort((a, b) => 
+  // Merge docket entries and calendar events
+  const mergedEntries = [
+    ...docketEntries.map((entry: any) => ({
+      ...entry,
+      source: 'docket',
+      scheduledTime: entry.scheduledTime
+    })),
+    ...calendarEvents.map((event: any) => ({
+      id: `cal-${event.id}`,
+      title: event.summary || event.title,
+      description: event.description,
+      scheduledTime: event.start?.dateTime || event.startTime,
+      type: 'calendar',
+      source: 'calendar',
+      location: event.location
+    }))
+  ];
+
+  const sortedEntries = mergedEntries.sort((a, b) => 
     new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime()
   );
 
@@ -137,6 +266,17 @@ export default function DailyDocket() {
                 onChange={(e) => setSelectedDate(new Date(e.target.value))}
                 className="bg-slate-700 border-slate-600"
               />
+              {googleCalendarStatus?.connected && (
+                <Button
+                  variant="outline"
+                  onClick={() => syncCalendarMutation.mutate()}
+                  disabled={syncCalendarMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sync Calendar
+                </Button>
+              )}
               <Dialog open={isAddingEntry} onOpenChange={setIsAddingEntry}>
                 <DialogTrigger asChild>
                   <Button className="bg-blue-600 hover:bg-blue-700">
@@ -207,8 +347,56 @@ export default function DailyDocket() {
         </CardContent>
       </Card>
 
+      {/* Google Calendar Integration */}
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Google Calendar Integration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${googleCalendarStatus?.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-sm">
+                {googleCalendarStatus?.connected ? 'Connected' : 'Not connected'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {googleCalendarStatus?.connected ? (
+                <Button
+                  variant="outline"
+                  onClick={() => disconnectCalendarMutation.mutate()}
+                  disabled={disconnectCalendarMutation.isPending}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Unlink className="h-4 w-4 mr-2" />
+                  Disconnect
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => connectCalendarMutation.mutate()}
+                  disabled={connectCalendarMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Link className="h-4 w-4 mr-2" />
+                  Connect Google Calendar
+                </Button>
+              )}
+            </div>
+          </div>
+          {googleCalendarStatus?.connected && (
+            <div className="mt-4 text-sm text-slate-400">
+              <p>Calendar events will be displayed alongside your docket entries.</p>
+              <p>Last sync: {calendarEvents.length > 0 ? 'Now' : 'Never'}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Schedule Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
@@ -240,6 +428,15 @@ export default function DailyDocket() {
             </p>
           </CardContent>
         </Card>
+        <Card className="bg-slate-800 border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold">Calendar Events</h4>
+              <Calendar className="h-5 w-5 text-purple-500" />
+            </div>
+            <p className="text-2xl font-bold">{calendarEvents.length}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Docket Items */}
@@ -267,16 +464,27 @@ export default function DailyDocket() {
                       </p>
                     </div>
                     <div className="flex-1">
-                      <div className="bg-slate-700 rounded-lg p-4">
+                      <div className={`${entry.source === 'calendar' ? 'bg-purple-900/30 border border-purple-700' : 'bg-slate-700'} rounded-lg p-4`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">{entry.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold">{entry.title}</h4>
+                            {entry.source === 'calendar' && (
+                              <Badge variant="outline" className="text-purple-300 border-purple-500">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                Google Calendar
+                              </Badge>
+                            )}
+                          </div>
                           <Badge className={`${getTypeColor(entry.type)} text-white`}>
                             {getTypeIcon(entry.type)}
-                            <span className="ml-1 capitalize">{entry.type}</span>
+                            <span className="ml-1 capitalize">{entry.type === 'calendar' ? 'Event' : entry.type}</span>
                           </Badge>
                         </div>
                         {entry.description && (
                           <p className="text-sm text-slate-400">{entry.description}</p>
+                        )}
+                        {entry.location && (
+                          <p className="text-xs text-slate-500 mt-1">📍 {entry.location}</p>
                         )}
                       </div>
                     </div>

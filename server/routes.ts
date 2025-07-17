@@ -21,6 +21,7 @@ import {
   coachOralArgument 
 } from "./services/gemini";
 import { processFileUpload } from "./services/fileUpload";
+import { googleCalendarService } from "./services/googleCalendar";
 
 // Configure multer for file uploads
 const uploadStorage = multer.diskStorage({
@@ -314,6 +315,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching docket entries:", error);
       res.status(500).json({ message: "Failed to fetch docket entries" });
+    }
+  });
+
+  // Google Calendar integration routes
+  app.get('/api/google-calendar/auth-url', isAuthenticated, async (req: any, res) => {
+    try {
+      const authUrl = googleCalendarService.getAuthUrl();
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("Error generating Google Calendar auth URL:", error);
+      res.status(500).json({ message: "Failed to generate auth URL" });
+    }
+  });
+
+  app.post('/api/google-calendar/callback', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { code } = req.body;
+      
+      const tokens = await googleCalendarService.getTokens(code);
+      
+      // Store tokens in user record
+      await storage.updateUser(userId, {
+        googleAccessToken: tokens.access_token,
+        googleRefreshToken: tokens.refresh_token,
+        googleTokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+      });
+      
+      res.json({ success: true, message: "Google Calendar connected successfully" });
+    } catch (error) {
+      console.error("Error connecting Google Calendar:", error);
+      res.status(500).json({ message: "Failed to connect Google Calendar" });
+    }
+  });
+
+  app.get('/api/google-calendar/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const isConnected = await googleCalendarService.isConnected(userId);
+      res.json({ connected: isConnected });
+    } catch (error) {
+      console.error("Error checking Google Calendar status:", error);
+      res.status(500).json({ message: "Failed to check Google Calendar status" });
+    }
+  });
+
+  app.get('/api/google-calendar/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date();
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      const events = await googleCalendarService.getCalendarEvents(userId, startDate, endDate);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching Google Calendar events:", error);
+      res.status(500).json({ message: "Failed to fetch calendar events" });
+    }
+  });
+
+  app.post('/api/google-calendar/sync', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const startDate = req.body.startDate ? new Date(req.body.startDate) : new Date();
+      const endDate = req.body.endDate ? new Date(req.body.endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      
+      await googleCalendarService.syncCalendarEvents(userId, startDate, endDate);
+      res.json({ success: true, message: "Calendar events synced successfully" });
+    } catch (error) {
+      console.error("Error syncing Google Calendar events:", error);
+      res.status(500).json({ message: "Failed to sync calendar events" });
+    }
+  });
+
+  app.post('/api/google-calendar/disconnect', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Remove Google tokens from user record
+      await storage.updateUser(userId, {
+        googleAccessToken: null,
+        googleRefreshToken: null,
+        googleTokenExpiry: null,
+      });
+      
+      res.json({ success: true, message: "Google Calendar disconnected successfully" });
+    } catch (error) {
+      console.error("Error disconnecting Google Calendar:", error);
+      res.status(500).json({ message: "Failed to disconnect Google Calendar" });
     }
   });
 

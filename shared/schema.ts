@@ -30,6 +30,9 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  googleAccessToken: text("google_access_token"),
+  googleRefreshToken: text("google_refresh_token"),
+  googleTokenExpiry: timestamp("google_token_expiry"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -91,6 +94,25 @@ export const docketEntries = pgTable("docket_entries", {
   title: varchar("title").notNull(),
   description: text("description"),
   status: varchar("status").default("scheduled"),
+  googleEventId: varchar("google_event_id"), // Link to Google Calendar event
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Google Calendar events table
+export const googleCalendarEvents = pgTable("google_calendar_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  googleEventId: varchar("google_event_id").notNull().unique(),
+  calendarId: varchar("calendar_id").notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  location: varchar("location"),
+  attendees: jsonb("attendees"),
+  isAllDay: boolean("is_all_day").default(false),
+  status: varchar("status").default("confirmed"),
+  lastSyncAt: timestamp("last_sync_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -112,6 +134,9 @@ export type GeneratedOrder = typeof generatedOrders.$inferSelect;
 
 export type InsertDocketEntry = typeof docketEntries.$inferInsert;
 export type DocketEntry = typeof docketEntries.$inferSelect;
+
+export type InsertGoogleCalendarEvent = typeof googleCalendarEvents.$inferInsert;
+export type GoogleCalendarEvent = typeof googleCalendarEvents.$inferSelect;
 
 // Zod schemas
 export const insertCaseSchema = createInsertSchema(cases).omit({
@@ -138,4 +163,10 @@ export const insertGeneratedOrderSchema = createInsertSchema(generatedOrders).om
 export const insertDocketEntrySchema = createInsertSchema(docketEntries).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertGoogleCalendarEventSchema = createInsertSchema(googleCalendarEvents).omit({
+  id: true,
+  createdAt: true,
+  lastSyncAt: true,
 });

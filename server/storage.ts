@@ -5,6 +5,7 @@ import {
   activityHistory,
   generatedOrders,
   docketEntries,
+  googleCalendarEvents,
   type User,
   type UpsertUser,
   type Case,
@@ -17,6 +18,8 @@ import {
   type InsertGeneratedOrder,
   type DocketEntry,
   type InsertDocketEntry,
+  type GoogleCalendarEvent,
+  type InsertGoogleCalendarEvent,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
@@ -25,6 +28,7 @@ export interface IStorage {
   // User operations - mandatory for Replit Auth
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<UpsertUser>): Promise<User>;
   
   // Case operations
   createCase(caseData: InsertCase): Promise<Case>;
@@ -49,6 +53,12 @@ export interface IStorage {
   createDocketEntry(entryData: InsertDocketEntry): Promise<DocketEntry>;
   getDocketEntries(userId: string, date?: Date): Promise<DocketEntry[]>;
   updateDocketEntry(id: number, updates: Partial<InsertDocketEntry>): Promise<DocketEntry>;
+  
+  // Google Calendar operations
+  createGoogleCalendarEvent(eventData: InsertGoogleCalendarEvent): Promise<GoogleCalendarEvent>;
+  getGoogleCalendarEvents(userId: string, startDate?: Date, endDate?: Date): Promise<GoogleCalendarEvent[]>;
+  upsertGoogleCalendarEvent(eventData: InsertGoogleCalendarEvent): Promise<GoogleCalendarEvent>;
+  deleteGoogleCalendarEvent(userId: string, googleEventId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -69,6 +79,15 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }
@@ -196,6 +215,54 @@ export class DatabaseStorage implements IStorage {
       .where(eq(docketEntries.id, id))
       .returning();
     return updatedEntry;
+  }
+
+  // Google Calendar operations
+  async createGoogleCalendarEvent(eventData: InsertGoogleCalendarEvent): Promise<GoogleCalendarEvent> {
+    const [event] = await db.insert(googleCalendarEvents).values(eventData).returning();
+    return event;
+  }
+
+  async getGoogleCalendarEvents(userId: string, startDate?: Date, endDate?: Date): Promise<GoogleCalendarEvent[]> {
+    let whereClause = eq(googleCalendarEvents.userId, userId);
+    
+    if (startDate && endDate) {
+      whereClause = and(
+        eq(googleCalendarEvents.userId, userId),
+        gte(googleCalendarEvents.startTime, startDate),
+        lte(googleCalendarEvents.endTime, endDate)
+      )!;
+    }
+    
+    return await db
+      .select()
+      .from(googleCalendarEvents)
+      .where(whereClause)
+      .orderBy(googleCalendarEvents.startTime);
+  }
+
+  async upsertGoogleCalendarEvent(eventData: InsertGoogleCalendarEvent): Promise<GoogleCalendarEvent> {
+    const [event] = await db
+      .insert(googleCalendarEvents)
+      .values(eventData)
+      .onConflictDoUpdate({
+        target: googleCalendarEvents.googleEventId,
+        set: {
+          ...eventData,
+          lastSyncAt: new Date(),
+        },
+      })
+      .returning();
+    return event;
+  }
+
+  async deleteGoogleCalendarEvent(userId: string, googleEventId: string): Promise<void> {
+    await db
+      .delete(googleCalendarEvents)
+      .where(and(
+        eq(googleCalendarEvents.userId, userId),
+        eq(googleCalendarEvents.googleEventId, googleEventId)
+      ));
   }
 }
 
