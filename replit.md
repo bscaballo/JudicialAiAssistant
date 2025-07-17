@@ -44,6 +44,8 @@ Preferred communication style: Simple, everyday language.
 - Gemini now receives PDFs as base64-encoded inline data for better document understanding
 - This resolves issues with scanned PDFs and image-heavy documents that pdf-parse couldn't handle
 - Text extraction remains as fallback for non-PDF file types or when file upload to Gemini fails
+- Also updated case extraction service (`generateCaseInfoFromFile`) to use native PDF processing
+- Fixed "Add New Case" upload pleading functionality to properly extract case info from scanned PDFs
 
 ## System Architecture
 
