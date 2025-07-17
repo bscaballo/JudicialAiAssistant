@@ -315,8 +315,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/docket/entries', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const entryData = insertDocketEntrySchema.parse({ ...req.body, userId });
-      const entry = await storage.createDocketEntry(entryData);
+      // Convert scheduledTime string to Date object
+      const entryData = {
+        ...req.body,
+        userId,
+        scheduledTime: new Date(req.body.scheduledTime)
+      };
+      const parsedData = insertDocketEntrySchema.parse(entryData);
+      const entry = await storage.createDocketEntry(parsedData);
       res.json(entry);
     } catch (error) {
       console.error("Error creating docket entry:", error);
