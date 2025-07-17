@@ -99,10 +99,9 @@ export async function performLegalResearch(query: string, filters: any) {
     Use the actual case names, citations, and courts from the data provided above.
     `;
 
-    // Use Gemini 2.5 Pro with Google Search grounding for enhanced results
+    // Use Gemini 2.5 Pro for enhanced results
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-pro",
-      tools: [{ googleSearchRetrieval: {} }]
+      model: "gemini-2.5-pro"
     });
     
     const response = await model.generateContent(prompt);

@@ -9,6 +9,7 @@ import { Search, ExternalLink, BookOpen, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LegalResearch() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +21,7 @@ export default function LegalResearch() {
   });
   const [searchResults, setSearchResults] = useState<any>(null);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   const searchMutation = useMutation({
     mutationFn: async () => {
@@ -37,16 +39,29 @@ export default function LegalResearch() {
         description: `Legal research completed with ${caseCount} cases found`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error.message?.includes("Unauthorized") 
+        ? "Please log in to perform legal research"
+        : "Failed to perform legal research";
+      
       toast({
         title: "Error",
-        description: "Failed to perform legal research",
+        description: errorMessage,
         variant: "destructive",
       });
     },
   });
 
   const handleSearch = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Error",
+        description: "Please log in to perform legal research",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!searchQuery.trim()) {
       toast({
         title: "Error",
