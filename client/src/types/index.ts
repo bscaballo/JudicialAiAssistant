@@ -8,7 +8,8 @@ export type ActiveTab =
   | 'jury-instruction-drafter' 
   | 'daily-docket' 
   | 'oral-argument-coach' 
-  | 'activity-history';
+  | 'activity-history'
+  | 'case-documents';
 
 export interface CaseDetails {
   caseName: string;

@@ -11,6 +11,7 @@ import JuryInstructionDrafter from "@/components/tools/JuryInstructionDrafter";
 import DailyDocket from "@/components/tools/DailyDocket";
 import OralArgumentCoach from "@/components/tools/OralArgumentCoach";
 import ActivityHistory from "@/components/tools/ActivityHistory";
+import { CaseDocuments } from "@/components/tools/CaseDocuments";
 import { ActiveTab } from "@/types";
 import { Case } from "@shared/schema";
 
@@ -41,6 +42,8 @@ export default function Home() {
         return <OralArgumentCoach selectedCase={selectedCase} />;
       case "activity-history":
         return <ActivityHistory selectedCase={selectedCase} />;
+      case "case-documents":
+        return <CaseDocuments selectedCase={selectedCase} />;
       default:
         return <Dashboard setActiveTab={setActiveTab} />;
     }

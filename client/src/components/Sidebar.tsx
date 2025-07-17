@@ -48,6 +48,7 @@ const NAVIGATION_ITEMS = [
   { id: "daily-docket" as ActiveTab, name: "Daily Docket", icon: Calendar },
   { id: "oral-argument-coach" as ActiveTab, name: "Argument Coach", icon: Mic },
   { id: "activity-history" as ActiveTab, name: "Activity History", icon: History },
+  { id: "case-documents" as ActiveTab, name: "Case Documents", icon: FileText },
 ];
 
 export default function Sidebar({ activeTab, setActiveTab, user, selectedCase, setSelectedCase }: SidebarProps) {
