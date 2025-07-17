@@ -116,7 +116,7 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
   });
 
   // Fetch Google Calendar events
-  const { data: calendarEvents = [], isLoading: eventsLoading } = useQuery<GoogleCalendarEvent[]>({
+  const { data: calendarEvents = [], isLoading: eventsLoading } = useQuery<any[]>({
     queryKey: ['/api/google-calendar/events'],
     enabled: !!user && calendarStatus?.connected,
     retry: false
@@ -126,14 +126,22 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
     totalCases: cases.length,
     activeCases: cases.filter(c => c.status === 'active').length,
     pendingCases: cases.filter(c => c.status === 'pending').length,
-    upcomingEvents: calendarEvents.filter(event => 
-      new Date(event.startTime) > new Date()
-    ).length
+    upcomingEvents: calendarEvents.filter(event => {
+      const eventTime = event.start?.dateTime || event.start?.date;
+      return eventTime && new Date(eventTime) > new Date();
+    }).length
   };
 
   const upcomingEvents = calendarEvents
-    .filter(event => new Date(event.startTime) > new Date())
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+    .filter(event => {
+      const eventTime = event.start?.dateTime || event.start?.date;
+      return eventTime && new Date(eventTime) > new Date();
+    })
+    .sort((a, b) => {
+      const aTime = a.start?.dateTime || a.start?.date || '';
+      const bTime = b.start?.dateTime || b.start?.date || '';
+      return new Date(aTime).getTime() - new Date(bTime).getTime();
+    })
     .slice(0, 5);
 
   const recentCases = cases
@@ -141,7 +149,17 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
     .slice(0, 5);
 
   const formatDateTime = (dateString: string) => {
+    if (!dateString) {
+      return { date: 'No date', time: 'No time' };
+    }
     const date = new Date(dateString);
+    // Check if it's an all-day event (date only, no time)
+    if (dateString.length === 10) {
+      return {
+        date: date.toLocaleDateString(),
+        time: 'All day'
+      };
+    }
     return {
       date: date.toLocaleDateString(),
       time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -326,14 +344,15 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
             ) : upcomingEvents.length > 0 ? (
               <div className="space-y-4">
                 {upcomingEvents.map((event) => {
-                  const { date, time } = formatDateTime(event.startTime);
+                  const eventTime = event.start?.dateTime || event.start?.date || '';
+                  const { date, time } = formatDateTime(eventTime);
                   return (
                     <div key={event.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-700/50">
                       <div className="bg-blue-500 rounded-full p-2">
                         <Calendar className="h-3 w-3 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-slate-100">{event.title}</p>
+                        <p className="font-medium text-slate-100">{event.summary || 'Untitled Event'}</p>
                         <div className="flex items-center gap-4 mt-1 text-sm text-slate-400">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
