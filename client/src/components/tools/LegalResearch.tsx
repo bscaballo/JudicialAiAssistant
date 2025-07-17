@@ -412,28 +412,40 @@ export default function LegalResearch() {
             </CardContent>
           </Card>
 
-          {/* Grounding Sources */}
-          {searchResults.groundingMetadata && searchResults.groundingMetadata.groundingChunks && (
+          {/* Google Search Sources */}
+          {searchResults.groundingChunks && searchResults.groundingChunks.length > 0 && (
             <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ExternalLink className="h-5 w-5" />
-                  Additional Sources
+                  Google Search Sources
                 </CardTitle>
+                {searchResults.webSearchQueries && searchResults.webSearchQueries.length > 0 && (
+                  <p className="text-sm text-slate-400 mt-2">
+                    Search queries: {searchResults.webSearchQueries.join(", ")}
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {searchResults.groundingMetadata.groundingChunks.map((chunk: any, index: number) => (
+                  {searchResults.groundingChunks.map((chunk: any, index: number) => (
                     <div key={index} className="bg-slate-900 rounded-lg p-3">
-                      <a 
-                        href={chunk.web.uri} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                      >
-                        {chunk.web.title}
-                      </a>
-                      <p className="text-xs text-slate-400 mt-1">{chunk.web.uri}</p>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <a 
+                            href={chunk.web?.uri || chunk.uri} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                          >
+                            {chunk.web?.title || chunk.title || `Source ${index + 1}`}
+                          </a>
+                          <p className="text-xs text-slate-500 mt-1">{chunk.web?.uri || chunk.uri}</p>
+                        </div>
+                        <span className="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded-full">
+                          [{index + 1}]
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>

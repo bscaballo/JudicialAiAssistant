@@ -123,6 +123,19 @@ export async function performLegalResearch(query: string, filters: any) {
       `Case: ${caseItem.caseName}\nCitation: ${caseItem.citation}\nCourt: ${caseItem.court}\nDate: ${caseItem.dateFiled}\nSnippet: ${caseItem.snippet}\nURL: ${caseItem.url}`
     ).join('\n\n');
 
+    // Build search query for Google grounding
+    let groundingQuery = query;
+    if (filters.jurisdiction === 'state' && filters.state) {
+      groundingQuery += ` ${filters.state.toUpperCase()} state law`;
+    }
+    if (filters.jurisdiction === 'federal' && filters.federalCircuit) {
+      groundingQuery += ` ${filters.federalCircuit} circuit court`;
+    }
+    if (filters.courtLevel && filters.courtLevel !== 'all') {
+      groundingQuery += ` ${filters.courtLevel} court`;
+    }
+    groundingQuery += " legal precedent case law analysis";
+
     const prompt = `
     You are a legal research assistant with access to real case law data. Please research the following legal query and provide comprehensive results.
     
@@ -135,34 +148,59 @@ export async function performLegalResearch(query: string, filters: any) {
     - Court Level: ${filters.courtLevel === 'all' ? 'All' : filters.courtLevel || 'All'}
     - Date Range: ${filters.dateFrom || 'All time'} to ${filters.dateTo || 'All time'}
     
-    ACTUAL CASE LAW FOUND:
+    ACTUAL CASE LAW FOUND FROM COURTLISTENER:
     ${caseContext}
     
-    Please provide a comprehensive legal research report that includes:
+    Using both the actual case law above and additional legal research, provide a comprehensive legal research report that includes:
     1. **Case Law Analysis**: Analyze the actual cases found above, explaining their relevance to the query
     2. **Key Legal Principles**: Extract and explain the main legal principles from these cases
     3. **Precedential Value**: Explain the precedential value of these cases
-    4. **Practical Applications**: How these cases apply to current legal practice
-    5. **Additional Research Recommendations**: Suggest further avenues for research
+    4. **Recent Developments**: Include any recent legal developments or trends found through research
+    5. **Practical Applications**: How these cases apply to current legal practice
+    6. **Additional Research Recommendations**: Suggest further avenues for research
     
     Format the response as a structured legal research report with proper citations.
     Use the actual case names, citations, and courts from the data provided above.
     `;
 
-    // Use Gemini 2.5 Pro for enhanced results
+    // Use Gemini 2.5 Pro with Google Search grounding
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-pro"
+      model: "gemini-2.5-flash"
     });
     
-    const response = await model.generateContent(prompt);
+    // Configure the grounding tool
+    const groundingTool = {
+      google_search: {}
+    };
+    
+    // Build generation config with grounding
+    const config = {
+      tools: [groundingTool],
+      generationConfig: {
+        temperature: 1.0, // Recommended for grounding
+      }
+    };
+    
+    const response = await model.generateContent(
+      prompt + `\n\nWhen searching, focus on: "${groundingQuery}"`,
+      config
+    );
+
+    const result = response.response;
+    const text = result.text();
+    
+    // Extract grounding metadata if available
+    const groundingMetadata = result.candidates?.[0]?.groundingMetadata || null;
 
     return {
-      results: response.response.text() || "Failed to perform legal research",
+      results: text || "Failed to perform legal research",
       query,
       filters,
       courtListenerResults,
       searchedAt: new Date().toISOString(),
-      groundingMetadata: response.response.candidates?.[0]?.groundingMetadata || null,
+      groundingMetadata: groundingMetadata,
+      webSearchQueries: groundingMetadata?.webSearchQueries || [],
+      groundingChunks: groundingMetadata?.groundingChunks || [],
     };
   } catch (error) {
     console.error("Error performing legal research:", error);

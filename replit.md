@@ -86,6 +86,22 @@ Preferred communication style: Simple, everyday language.
 - Added search tips help section explaining query operators
 - Increased result display from 5 to 10 cases for better research coverage
 
+### January 17, 2025 - Google Search Grounding Integration
+- Integrated Google Search grounding with Gemini 2.5 Flash for legal research analysis
+- Added grounding tool configuration using google_search tool
+- Enhanced legal research to combine CourtListener case law with real-time Google Search results
+- Updated Gemini service to include:
+  - Dynamic search query building based on jurisdiction and court filters
+  - Grounding metadata extraction with web search queries and sources
+  - Temperature setting of 1.0 for optimal grounding results
+- Enhanced UI to display Google Search sources with:
+  - Clickable source links with titles
+  - Search queries used for transparency
+  - Numbered citations for easy reference
+- This provides more comprehensive legal research by combining:
+  - Actual case law from CourtListener (primary sources)
+  - Current legal news, analysis, and commentary from Google Search (secondary sources)
+
 ## System Architecture
 
 ### Frontend Architecture
