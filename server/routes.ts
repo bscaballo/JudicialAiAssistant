@@ -339,7 +339,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Calendar integration routes
   app.get('/api/google-calendar/auth-url', isAuthenticated, async (req: any, res) => {
     try {
-      const authUrl = googleCalendarService.getAuthUrl();
+      const userId = req.user.claims.sub;
+      const authUrl = googleCalendarService.getAuthUrl(userId);
       res.json({ authUrl });
     } catch (error) {
       console.error("Error generating Google Calendar auth URL:", error);
@@ -350,20 +351,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google OAuth callback - GET route (used by Google)
   app.get('/api/google-calendar/callback', async (req: any, res) => {
     try {
-      // Extract user ID from session or state parameter
+      // Extract user ID from state parameter (passed through OAuth flow)
       const { code, state } = req.query;
       
-      if (!req.session || !req.session.user) {
-        return res.status(401).send('Session expired. Please log in again.');
+      if (!state) {
+        return res.status(401).send('Missing state parameter. Please try connecting again.');
       }
       
-      const userId = req.session.user.id;
+      // Use userId from state parameter instead of session
+      const userId = state as string;
       
       if (!code) {
         return res.status(400).send('Authorization code is required');
       }
       
-      const tokens = await googleCalendarService.getTokens(code);
+      const tokens = await googleCalendarService.getTokens(code as string);
       
       // Store tokens in user record
       await storage.updateUser(userId, {
@@ -386,12 +388,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <body>
             <h1 class="success">Google Calendar Connected Successfully!</h1>
             <p>Your Google Calendar has been connected to your account.</p>
-            <p>You can now close this window and return to the application.</p>
+            <p>This window will close automatically...</p>
             <script>
-              // Close the popup window after 3 seconds
+              // Try to reload the parent window if it exists
+              if (window.opener && !window.opener.closed) {
+                window.opener.location.reload();
+              }
+              // Close the popup window after 2 seconds
               setTimeout(function() {
                 window.close();
-              }, 3000);
+              }, 2000);
             </script>
           </body>
         </html>

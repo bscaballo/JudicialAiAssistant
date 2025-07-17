@@ -42,17 +42,19 @@ export class GoogleCalendarService {
     );
   }
 
-  // Generate authorization URL for Google Calendar OAuth
-  getAuthUrl(): string {
+  // Generate authorization URL for Google Calendar OAuth with state parameter
+  getAuthUrl(userId: string): string {
     const scopes = [
       'https://www.googleapis.com/auth/calendar.readonly',
       'https://www.googleapis.com/auth/calendar.events'
     ];
 
+    // Use state parameter to maintain user context through OAuth flow
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
-      prompt: 'consent'
+      prompt: 'consent',
+      state: userId // Pass userId as state to maintain context
     });
   }
 

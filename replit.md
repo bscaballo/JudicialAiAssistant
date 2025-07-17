@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 17, 2025 - Google OAuth Production Fix
+- Fixed OAuth redirect URI mismatch error for deployed application
+- Hardcoded production redirect URI to match Google Cloud Console configuration
+- Implemented state parameter to maintain user context through OAuth flow
+- Updated OAuth callback to use state parameter instead of relying on session
+- Added sameSite cookie configuration to improve OAuth redirect handling
+- Enhanced success page to automatically refresh parent window after connection
+
 ### January 17, 2025 - Case Selector Implementation
 - Added case selector dropdown to sidebar for selecting active case
 - Implemented "Add New Case" functionality with manual entry and AI-powered document extraction
