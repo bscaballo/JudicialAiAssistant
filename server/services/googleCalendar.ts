@@ -5,7 +5,7 @@ import { User } from '../../shared/schema';
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/google-calendar/callback';
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://judicial-ai-assistant-bryce91.replit.app/api/google-calendar/callback';
 
 export interface CalendarEvent {
   id: string;
