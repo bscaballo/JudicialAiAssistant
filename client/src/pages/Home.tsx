@@ -12,33 +12,35 @@ import DailyDocket from "@/components/tools/DailyDocket";
 import OralArgumentCoach from "@/components/tools/OralArgumentCoach";
 import ActivityHistory from "@/components/tools/ActivityHistory";
 import { ActiveTab } from "@/types";
+import { Case } from "@shared/schema";
 
 export default function Home() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
         return <Dashboard setActiveTab={setActiveTab} />;
       case "case-briefer":
-        return <CaseBriefer />;
+        return <CaseBriefer selectedCase={selectedCase} />;
       case "legal-research":
-        return <LegalResearch />;
+        return <LegalResearch selectedCase={selectedCase} />;
       case "case-law-explorer":
-        return <CaseLawExplorer />;
+        return <CaseLawExplorer selectedCase={selectedCase} />;
       case "evidence-analyzer":
-        return <EvidenceAnalyzer />;
+        return <EvidenceAnalyzer selectedCase={selectedCase} />;
       case "order-drafter":
-        return <OrderDrafter />;
+        return <OrderDrafter selectedCase={selectedCase} />;
       case "jury-instruction-drafter":
-        return <JuryInstructionDrafter />;
+        return <JuryInstructionDrafter selectedCase={selectedCase} />;
       case "daily-docket":
-        return <DailyDocket />;
+        return <DailyDocket selectedCase={selectedCase} />;
       case "oral-argument-coach":
-        return <OralArgumentCoach />;
+        return <OralArgumentCoach selectedCase={selectedCase} />;
       case "activity-history":
-        return <ActivityHistory />;
+        return <ActivityHistory selectedCase={selectedCase} />;
       default:
         return <Dashboard setActiveTab={setActiveTab} />;
     }
@@ -50,6 +52,8 @@ export default function Home() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab}
         user={user}
+        selectedCase={selectedCase}
+        setSelectedCase={setSelectedCase}
       />
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">

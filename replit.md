@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 17, 2025 - Case Selector Implementation
+- Added case selector dropdown to sidebar for selecting active case
+- Implemented "Add New Case" functionality with manual entry and AI-powered document extraction
+- Created case creation dialog with tabbed interface for manual entry or pleading upload
+- Added AI-powered case information extraction from initial pleadings using Google Gemini
+- Updated all tools to receive selectedCase context for proper case attribution
+- Enhanced sidebar UI with case selection dropdown showing case names and numbers
+- Integrated case selection state management throughout the application
+- Created case extractor service for automatic case detail extraction from legal documents
+
 ### January 17, 2025 - Dashboard Implementation
 - Added comprehensive dashboard as default landing page after login
 - Dashboard displays pending cases, calendar events, and AI tool access

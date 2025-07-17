@@ -21,8 +21,9 @@ import {
   generateJuryInstructions,
   coachOralArgument 
 } from "./services/gemini";
-import { processFileUpload } from "./services/fileUpload";
+import { processFileUpload, extractTextFromFile } from "./services/fileUpload";
 import { googleCalendarService } from "./services/googleCalendar";
+import fs from "fs";
 
 // Configure multer for file uploads
 const uploadStorage = multer.diskStorage({
@@ -291,6 +292,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating jury instructions:", error);
       res.status(500).json({ message: "Failed to generate jury instructions" });
+    }
+  });
+
+  // Extract case information from uploaded pleading
+  app.post('/api/extract-case-info', isAuthenticated, upload.single('document'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Extract text content from the file
+      const textContent = await extractTextFromFile(file.path, file.mimetype);
+      
+      // Use AI to extract case information
+      const { generateCaseInfo } = await import("./services/caseExtractor");
+      const caseInfo = await generateCaseInfo(textContent);
+      
+      // Clean up the uploaded file
+      fs.unlinkSync(file.path);
+      
+      res.json(caseInfo);
+    } catch (error) {
+      console.error("Error extracting case info:", error);
+      res.status(500).json({ message: "Failed to extract case information" });
     }
   });
 
